@@ -4,7 +4,7 @@ module Main (splitList, main) where
 
 import Control.Lens
 import Data.List.Split (splitOn)
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust)
 import Data.Stack (Stack, stackNew, stackPeek, stackPop, stackPush)
 
 splitList :: forall a. (Eq a) => a -> [a] -> Maybe ([a], [a])
@@ -70,5 +70,3 @@ main = do
   (state_inp, actions) <- pure $ parseInput file_str
   print $ map (fromJust . stackPeek) (foldl doAction (createState state_inp) actions)
   print $ map (fromJust . stackPeek) (foldl doAction2 (createState state_inp) actions)
-
--- print $ map (fromJust . stackPeek) (foldl (doAction2 0)  (createState state_inp) actions)

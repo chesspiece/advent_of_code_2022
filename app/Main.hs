@@ -60,7 +60,8 @@ doAction _ _ = error ":(((("
 
 doAction2 :: [Stack Char] -> [Int] -> [Stack Char]
 doAction2 stcks [a, b, c] = tail $ doAction new_stack_list [a, 1, c + 1]
-  where new_stack_list = doAction (stackNew:stcks) [a, b + 1, 1]
+  where
+    new_stack_list = doAction (stackNew : stcks) [a, b + 1, 1]
 doAction2 _ _ = error ":(((("
 
 main :: IO ()
@@ -69,4 +70,5 @@ main = do
   (state_inp, actions) <- pure $ parseInput file_str
   print $ map (fromJust . stackPeek) (foldl doAction (createState state_inp) actions)
   print $ map (fromJust . stackPeek) (foldl doAction2 (createState state_inp) actions)
-  --print $ map (fromJust . stackPeek) (foldl (doAction2 0)  (createState state_inp) actions)
+
+-- print $ map (fromJust . stackPeek) (foldl (doAction2 0)  (createState state_inp) actions)

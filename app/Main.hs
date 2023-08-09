@@ -6,6 +6,7 @@ import Control.Lens
 import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
 import Data.Stack (Stack, stackNew, stackPeek, stackPop, stackPush)
+import Data.List (foldl')
 
 splitList :: forall a. (Eq a) => a -> [a] -> Maybe ([a], [a])
 splitList = splitListHelper []
@@ -37,7 +38,7 @@ takeNthElems n (x : xs) = x : takeNthElems n (drop n xs)
 takeNthElems _ [] = []
 
 createState :: [String] -> [Stack Char]
-createState state = foldl (addStateHelper []) [stackNew | _ <- [1 .. (length (state !! 1))]] true_state
+createState state = foldl' (addStateHelper []) [stackNew | _ <- [1 .. (length (state !! 1))]] true_state
   where
     addStateHelper :: [Stack Char] -> [Stack Char] -> String -> [Stack Char]
     addStateHelper accum (st : stt) (ch : rest) = addStateHelper (accum ++ [new_stack]) stt rest
@@ -68,5 +69,6 @@ main :: IO ()
 main = do
   file_str <- readFile "./task_5.txt"
   (state_inp, actions) <- pure $ parseInput file_str
-  print $ map (fromJust . stackPeek) (foldl doAction (createState state_inp) actions)
-  print $ map (fromJust . stackPeek) (foldl doAction2 (createState state_inp) actions)
+
+  print $ map (fromJust . stackPeek) (foldl' doAction (createState state_inp) actions)
+  print $ map (fromJust . stackPeek) (foldl' doAction2 (createState state_inp) actions)

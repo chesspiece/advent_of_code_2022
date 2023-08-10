@@ -1,4 +1,4 @@
-module Main where
+module Day2 (day2) where
 
 import Data.List.Split (splitOn)
 
@@ -29,8 +29,8 @@ checkStringV2 ["C", "Y"] = 3 + 3
 checkStringV2 ["C", "Z"] = 1 + 6
 checkStringV2 _ = -1
 
-main :: IO ()
-main = do
+day2 :: IO ()
+day2 = do
   file_str <- readFile "task_2.txt"
   print $ sum . map checkString . parseString $ file_str
   print $ sum . map checkStringV2 . parseString $ file_str

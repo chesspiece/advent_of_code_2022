@@ -1,4 +1,4 @@
-module Main where
+module Day3 (day3) where
 
 import Data.Char (ord, isAsciiLower)
 import Data.Set (fromList, member, Set, intersection)
@@ -40,8 +40,8 @@ checkInclusion (a1, b1) = fromMaybe 0 (valueInSet b1 (fromList a1))
     --    Nothing -> 0
     --    Just val -> val
 
-main :: IO ()
-main = do
+day3 :: IO ()
+day3 = do
     file_str <- readFile "task_3.txt"
     print $ sum . map checkInclusion . parseString $ file_str
     print $ sum . map findCommon . groupThree . parseString2 $ file_str

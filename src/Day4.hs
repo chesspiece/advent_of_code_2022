@@ -1,4 +1,4 @@
-module Main where
+module Day4 where
 
 import Data.List.Split (splitOn)
 
@@ -20,8 +20,8 @@ check2 (a, b, c, d)
   | b < c || d < a = 0
   | otherwise = 1
 
-main :: IO ()
-main = do
+day4 :: IO ()
+day4 = do
   file_str <- readFile "task_4.txt"
   print $
     sum

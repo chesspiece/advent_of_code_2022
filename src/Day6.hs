@@ -13,6 +13,7 @@ parseInputString marker_condition = parseInputStringHelper marker_condition (-ma
       False -> parseInputStringHelper marker_condition (chk + 1) (acc + 1) (check_list ++ [c]) str
       where
         new_check_list = tail . dropWhile (/= c) $ check_list ++ [c]
+    parseInputStringHelper _ _ _ _ _ = error "Wrong input for this task"
 
 day6 :: IO ()
 day6 = do

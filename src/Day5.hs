@@ -7,7 +7,6 @@ import Data.List.Split (splitOn)
 import Data.Maybe (fromJust)
 import Data.Stack (Stack, stackNew, stackPeek, stackPop, stackPush)
 import Data.List (foldl')
-import qualified Day1
 
 splitList :: forall a. (Eq a) => a -> [a] -> Maybe ([a], [a])
 splitList = splitListHelper []

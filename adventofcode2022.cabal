@@ -41,7 +41,7 @@ author:             Manshilin Oleg
 maintainer:         manshilin.o@gmail.com
 
 -- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
-extra-doc-files:    CHANGELOG.md
+extra-doc-files:    README.md
 
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
@@ -52,7 +52,7 @@ common warnings
 library
     hs-source-dirs: src
     exposed-modules: Day1, Day2, Day3,
-                     Day4, Day5
+                     Day4, Day5, Day6
     build-depends:
         base ^>=4.17,
         split ^>=0.2,

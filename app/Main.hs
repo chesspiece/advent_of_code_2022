@@ -4,6 +4,7 @@ import Day3 (day3)
 import Day4 (day4)
 import Day5 (day5)
 import Day6 (day6)
+import Day7 (day7)
 
 chooseDay :: Int -> IO ()
 chooseDay day_num = case day_num of
@@ -13,6 +14,7 @@ chooseDay day_num = case day_num of
   4 -> day4
   5 -> day5
   6 -> day6
+  7 -> day7
   _ -> error "Day with such number is unimplemented yet"
 
 main :: IO ()

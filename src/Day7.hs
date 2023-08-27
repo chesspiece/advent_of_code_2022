@@ -17,6 +17,10 @@ compSize (Dir str st Nothing) = Dir str new_set (Just (sum $ Data.Set.map size n
 compSize (Dir str st (Just a)) = Dir str st (Just a)
 compSize (File str a) = File str a
 
+tree2list :: Tree -> [Int]
+tree2list (Dir str st (Just a))= a : concatMap tree2list st
+tree2list (File str a) = []
+
 size :: Tree -> Int
 size (Dir _ _ (Just a)) = a
 size (Dir _ _ Nothing) = 0
@@ -45,13 +49,9 @@ parseInput (x : xs) Nothing
     spltStr = splitOn " " x
     str_part = last spltStr
 
-findSum :: Tree -> Int -> Int
-findSum (Dir _ tr (Just a)) acc = if a >= 10000
-    then undefined
-    else undefined
-
 day7 :: IO ()
 day7 = do
   input_stream <- readFile "./task_7.txt" >>= return . lines
   let (_, test) = parseInput input_stream Nothing
-  print $ compSize test
+  -- print $ tree2list . compSize $ test
+  print $ sum . filter (<= 100000) $ (tree2list . compSize $ test)

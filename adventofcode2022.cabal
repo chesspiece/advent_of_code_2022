@@ -46,13 +46,14 @@ common warnings
 library
     hs-source-dirs: src
     exposed-modules: Day1, Day2, Day3,
-                     Day4, Day5, Day6
+                     Day4, Day5, Day6, Day7
     build-depends:
         base ^>=4.17,
         split ^>=0.2,
         containers ^>=0.6,
         Stack ^>=0.4,
-        lens ^>=5.2
+        lens ^>=5.2,
+        parsec ^>= 3.1
     default-language: Haskell2010
 
 executable adventofcode2022

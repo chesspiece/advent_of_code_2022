@@ -68,7 +68,7 @@ doAction2 _ _ = error ":(((("
 day5 :: IO ()
 day5 = do
   file_str <- readFile "./task_5.txt"
-  (state_inp, actions) <- pure $ parseInput file_str
+  (state_inp, actions) <- return $ parseInput file_str
 
   print $ map (fromJust . stackPeek) (foldl' doAction (createState state_inp) actions)
   print $ map (fromJust . stackPeek) (foldl' doAction2 (createState state_inp) actions)

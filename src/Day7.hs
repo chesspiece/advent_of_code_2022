@@ -34,9 +34,9 @@ parseInput (x : xs) (Just tr)
   | "dir" `isPrefixOf` x = parseInput xs (Just tr)
   | "$ ls" `isPrefixOf` x = parseInput xs (Just tr)
   | "$ cd" `isPrefixOf` x = parseInput rest (Just (Dir str1 (tr1 `union` fromList [new_tree]) Nothing))
-  | otherwise = parseInput xs (Just new_file)
+  | otherwise = parseInput xs (Just new_tree2)
   where
-    new_file = Dir str1 (tr1 `union` fromList [File str_part (read sz_part)]) Nothing
+    new_tree2 = Dir str1 (tr1 `union` fromList [File str_part (read sz_part)]) Nothing
     (rest, new_tree) = parseInput xs (Just (Dir str_part (fromList []) Nothing))
     Dir str1 tr1 _ = tr
     spltStr = splitOn " " x

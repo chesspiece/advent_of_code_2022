@@ -18,7 +18,7 @@ compSize (Dir str st (Just a)) = Dir str st (Just a)
 compSize (File str a) = File str a
 
 tree2list :: Tree -> [Int]
-tree2list (Dir str st (Just a))= a : concatMap tree2list st
+tree2list (Dir str st (Just a)) = a : concatMap tree2list st
 tree2list (File str a) = []
 
 size :: Tree -> Int
@@ -53,5 +53,7 @@ day7 :: IO ()
 day7 = do
   input_stream <- readFile "./task_7.txt" >>= return . lines
   let (_, test) = parseInput input_stream Nothing
-  -- print $ tree2list . compSize $ test
-  print $ sum . filter (<= 100000) $ (tree2list . compSize $ test)
+  let res_sizes = tree2list . compSize $ test
+  let needed_size = 30000000 - (70000000 - head res_sizes)
+  print $ sum . filter (<= 100000) $ res_sizes
+  print $ minimum . filter (>= needed_size) $ res_sizes

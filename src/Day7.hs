@@ -46,8 +46,7 @@ parseInput (x : xs) Nothing
   | "$ cd" `isPrefixOf` x = parseInput xs (Just (Dir str_part (fromList []) Nothing))
   | otherwise = error "Something is wrong"
   where
-    spltStr = splitOn " " x
-    str_part = last spltStr
+    str_part = last . splitOn " " $ x
 
 day7 :: IO ()
 day7 = do

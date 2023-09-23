@@ -134,7 +134,4 @@ day8 = do
   let secondResHalf = [[ min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstResHalf thirdHalf]
   let thirdResHalf = [[ min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip secondResHalf fourthHalf]
   let res = [[ if x1 < y1 then 1 else 0 | (x1, y1) <- zip x y] | (x, y) <- zip thirdResHalf input_stream]
-  print thirdResHalf
-  print input_stream
-  print res
   print $ sum $ map sum res

@@ -15,25 +15,25 @@ data TaskState = TaskState {_boardState :: [[Int]], _compState :: [[Int]], _maxC
 makeLenses ''TaskState
 
 firstRun :: Int -> Int -> State TaskState [[Int]]
-firstRun 4 4 = do
-  _compState <$> get
 firstRun 0 j = do firstRun 1 0
 firstRun i 0 = do firstRun i 1
 firstRun i j = do
   currSt <- get
-  let choice1 = max ((_boardState currSt !! i) !! (j - 1)) ((_compState currSt !! i) !! (j - 1)) 
-  let choice2 = max ((_boardState currSt !! (i - 1)) !! j) ((_compState currSt !! (i - 1)) !! j)
-  let curr_sol = _compState currSt & ix i . ix j .~ min choice1 choice2
-  put $
-    TaskState
-      { _boardState = _boardState currSt,
-        _compState = curr_sol,
-        _maxColumns = _maxColumns currSt,
-        _maxRows = _maxRows currSt
-      }
-  if j == 4
-    then firstRun (i + 1) 0
-    else firstRun i (j + 1)
+  if i /= _maxRows currSt || j /= _maxColumns currSt then do
+    let choice1 = max ((_boardState currSt !! i) !! (j - 1)) ((_compState currSt !! i) !! (j - 1)) 
+    let choice2 = max ((_boardState currSt !! (i - 1)) !! j) ((_compState currSt !! (i - 1)) !! j)
+    let curr_sol = _compState currSt & ix i . ix j .~ min choice1 choice2
+    put $
+      TaskState
+        { _boardState = _boardState currSt,
+          _compState = curr_sol,
+          _maxColumns = _maxColumns currSt,
+          _maxRows = _maxRows currSt
+        }
+    if j == 4
+      then firstRun (i + 1) 0
+      else firstRun i (j + 1)
+  else do _compState <$> get
 
 day8 :: IO ()
 day8 = do

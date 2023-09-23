@@ -15,11 +15,15 @@ data TaskState = TaskState {_boardState :: [[Int]], _compState :: [[Int]], _maxC
 makeLenses ''TaskState
 
 firstRun :: Int -> Int -> State TaskState [[Int]]
-firstRun 0 0 = do
+firstRun 4 4 = do
   _compState <$> get
-firstRun 0 j = do
+firstRun 0 j = do firstRun 1 0
+firstRun i 0 = do firstRun i 1
+firstRun i j = do
   currSt <- get
-  let curr_sol = _compState currSt & ix 0 . ix j .~ (head (_boardState currSt) !! (j - 1))
+  let choice1 = max ((_boardState currSt !! i) !! (j - 1)) ((_compState currSt !! i) !! (j - 1)) 
+  let choice2 = max ((_boardState currSt !! (i - 1)) !! j) ((_compState currSt !! (i - 1)) !! j)
+  let curr_sol = _compState currSt & ix i . ix j .~ min choice1 choice2
   put $
     TaskState
       { _boardState = _boardState currSt,
@@ -27,9 +31,9 @@ firstRun 0 j = do
         _maxColumns = _maxColumns currSt,
         _maxRows = _maxRows currSt
       }
-  if j == 8
-    then firstRun 0 (j + 1)
-    else firstRun 1 0
+  if j == 4
+    then firstRun (i + 1) 0
+    else firstRun i (j + 1)
 
 day8 :: IO ()
 day8 = do
@@ -37,5 +41,5 @@ day8 = do
   let s1 = length input_stream
   let s2 = length $ head input_stream
   let initial_sol = replicate s1 $ replicate s2 0
-  print input_stream
-  print initial_sol
+  let task = TaskState {_boardState = input_stream , _compState = initial_sol , _maxColumns = s1 - 1, _maxRows = s2 - 1}
+  print $ evalState (firstRun 0 0) task

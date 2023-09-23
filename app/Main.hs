@@ -21,6 +21,4 @@ chooseDay day_num = case day_num of
 
 main :: IO ()
 main = do
-  putStrLn "Input day number to solve: "
-  day_number <- getLine 
-  chooseDay $ read day_number
+  putStrLn "Input day number to solve: " >> getLine >>= chooseDay . read

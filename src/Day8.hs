@@ -23,13 +23,7 @@ firstRun i j = do
     then do
       let choice = max ((_boardState currSt !! i) !! (j - 1)) ((_compState currSt !! i) !! (j - 1))
       let curr_sol = _compState currSt & ix i . ix j .~ choice
-      put $
-        TaskState
-          { _boardState = _boardState currSt,
-            _compState = curr_sol,
-            _maxColumns = _maxColumns currSt,
-            _maxRows = _maxRows currSt
-          }
+      put $ currSt & compState .~ curr_sol
       if j == _maxColumns currSt
         then firstRun (i + 1) 0
         else firstRun i (j + 1)
@@ -43,13 +37,7 @@ secondRun i j = do
     then do
       let choice = max ((_boardState currSt !! (i - 1)) !! j) ((_compState currSt !! (i - 1)) !! j)
       let curr_sol = _compState currSt & ix i . ix j .~ choice
-      put $
-        TaskState
-          { _boardState = _boardState currSt,
-            _compState = curr_sol,
-            _maxColumns = _maxColumns currSt,
-            _maxRows = _maxRows currSt
-          }
+      put $ currSt & compState .~ curr_sol
       if j == _maxColumns currSt
         then secondRun (i + 1) 0
         else secondRun i (j + 1)
@@ -64,26 +52,14 @@ thirdRun i j = do
   if i == checkRows
     then do
       let curr_sol = _compState currSt & ix i . ix j .~ (-1)
-      put $
-        TaskState
-          { _boardState = _boardState currSt,
-            _compState = curr_sol,
-            _maxColumns = _maxColumns currSt,
-            _maxRows = _maxRows currSt
-          }
+      put $ currSt & compState .~ curr_sol
       if j == 0
         then thirdRun (i - 1) (_maxColumns currSt)
         else thirdRun i (j - 1)
     else do
       let choice = max ((_boardState currSt !! (i + 1)) !! j) ((_compState currSt !! (i + 1)) !! j)
       let curr_sol = _compState currSt & ix i . ix j .~ choice
-      put $
-        TaskState
-          { _boardState = _boardState currSt,
-            _compState = curr_sol,
-            _maxColumns = _maxColumns currSt,
-            _maxRows = _maxRows currSt
-          }
+      put $ currSt & compState .~ curr_sol
       if j == 0
         then thirdRun (i - 1) (_maxColumns currSt)
         else thirdRun i (j - 1)
@@ -97,24 +73,12 @@ forthRun i j = do
   if j == checkColumns
     then do
       let curr_sol = _compState currSt & ix i . ix j .~ (-1)
-      put $
-        TaskState
-          { _boardState = _boardState currSt,
-            _compState = curr_sol,
-            _maxColumns = _maxColumns currSt,
-            _maxRows = _maxRows currSt
-          }
+      put $ currSt & compState .~ curr_sol
       forthRun i (j - 1)
     else do
       let choice = max ((_boardState currSt !! i) !! (j + 1)) ((_compState currSt !! i) !! (j + 1))
       let curr_sol = _compState currSt & ix i . ix j .~ choice
-      put $
-        TaskState
-          { _boardState = _boardState currSt,
-            _compState = curr_sol,
-            _maxColumns = _maxColumns currSt,
-            _maxRows = _maxRows currSt
-          }
+      put $ currSt & compState .~ curr_sol
       if j == 0
         then forthRun (i - 1) (_maxColumns currSt)
         else forthRun i (j - 1)
@@ -126,12 +90,12 @@ day8 = do
   let s2 = length $ head input_stream
   let initial_sol = replicate s1 $ replicate s2 (-1)
   let task = TaskState {_boardState = input_stream, _compState = initial_sol, _maxColumns = s1 - 1, _maxRows = s2 - 1}
-  let firstHalf = evalState (firstRun 0 0) task
-  let secondHalf = evalState (secondRun 0 0) task
-  let thirdHalf = evalState (thirdRun (s1 -1) (s2 - 1)) task
-  let fourthHalf = evalState (forthRun (s1 - 1) (s2 - 1)) task
-  let firstResHalf = [[ min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstHalf secondHalf]
-  let secondResHalf = [[ min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstResHalf thirdHalf]
-  let thirdResHalf = [[ min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip secondResHalf fourthHalf]
-  let res = [[ if x1 < y1 then 1 else 0 | (x1, y1) <- zip x y] | (x, y) <- zip thirdResHalf input_stream]
+  let firstPart = evalState (firstRun 0 0) task
+  let secondPart = evalState (secondRun 0 0) task
+  let thirdPart = evalState (thirdRun (s1 - 1) (s2 - 1)) task
+  let fourthPart = evalState (forthRun (s1 - 1) (s2 - 1)) task
+  let firstResPart = [[min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstPart secondPart]
+  let secondResPart = [[min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstResPart thirdPart]
+  let thirdResPart = [[min x1 y1 | (x1, y1) <- zip x y] | (x, y) <- zip secondResPart fourthPart]
+  let res = [[if x1 < y1 then 1 else 0 | (x1, y1) <- zip x y] | (x, y) <- zip thirdResPart input_stream]
   print $ sum $ map sum res

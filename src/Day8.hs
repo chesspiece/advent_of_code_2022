@@ -206,11 +206,11 @@ day8 = do
   let task2 = TaskState {_boardState = input_stream, _compState = initial_sol2, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec}
   let task2_rev_columns = TaskState {_boardState = input_stream, _compState = initial_sol2, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec_rev_columns}
   let task2_rev_rows = TaskState {_boardState = input_stream, _compState = initial_sol2, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec_rev_rows}
-  let firstHalf2 = evalState (firstRun2 0 0) task2
-  let secondHalf2 = evalState (secondRun2 0 0) task2
-  let thirdHalf2 = evalState (thirdRun2 (s1 - 1) (s2 - 1)) task2_rev_columns
-  let fourthHalf2 = evalState (fourthRun2 (s1 - 1) (s2 - 1)) task2_rev_rows
-  let firstResHalf2 = [[x1 * y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstHalf2 secondHalf2]
-  let secondResHalf2 = [[x1 * y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstResHalf2 thirdHalf2]
-  let res = [[x1 * y1 | (x1, y1) <- zip x y] | (x, y) <- zip secondResHalf2 fourthHalf2]
+  let firstPart2 = evalState (firstRun2 0 0) task2
+  let secondPart2 = evalState (secondRun2 0 0) task2
+  let thirdPart2 = evalState (thirdRun2 (s1 - 1) (s2 - 1)) task2_rev_columns
+  let fourthPart2 = evalState (fourthRun2 (s1 - 1) (s2 - 1)) task2_rev_rows
+  let firstResPart2 = [[x1 * y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstPart2 secondPart2]
+  let secondResPart2 = [[x1 * y1 | (x1, y1) <- zip x y] | (x, y) <- zip firstResPart2 thirdPart2]
+  let res = [[x1 * y1 | (x1, y1) <- zip x y] | (x, y) <- zip secondResPart2 fourthPart2]
   print $ maximum $ map maximum res

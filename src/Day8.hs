@@ -158,7 +158,6 @@ thirdRun2 i j = do
       _compState <$> get
 
 fourthRun2 :: Int -> Int -> State TaskState [[Int]]
-fourthRun2 0 0 = _compState <$> get
 fourthRun2 i j = do
   currSt <- get
   if i /= 0 || j /= 0

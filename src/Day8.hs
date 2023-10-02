@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE ParallelListComp #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Use <&>" #-}
@@ -10,11 +10,17 @@ module Day8 (day8) where
 import Control.Lens
 import Control.Monad.State (MonadState (get, put), State, evalState, gets, runState)
 import Data.Char (digitToInt)
+import qualified Data.Text as T
 import qualified Data.Vector as V
-import Debug.Trace (trace, traceM)
+import qualified System.IO.Strict as S
 
-data TaskState = TaskState {_boardState :: V.Vector (V.Vector Int), _compState :: V.Vector (V.Vector Int),
-                            _maxColumns :: Int, _maxRows :: Int, _helperVec :: V.Vector Int}
+data TaskState = TaskState
+  { _boardState :: V.Vector (V.Vector Int),
+    _compState :: V.Vector (V.Vector Int),
+    _maxColumns :: Int,
+    _maxRows :: Int,
+    _helperVec :: V.Vector Int
+  }
   deriving (Show)
 
 makeLenses ''TaskState
@@ -184,7 +190,7 @@ fourthRun2 i j = do
 
 day8 :: IO ()
 day8 = do
-  input_stream <- readFile "./task_8.txt" >>= return . V.fromList . map (V.fromList . map digitToInt) . lines
+  input_stream <- S.readFile "./task_8.txt" >>= return . V.fromList . map (V.fromList . map digitToInt) . lines
   let s1 = length input_stream
   let s2 = length $ input_stream V.! 0
   let initial_sol = V.replicate s1 $ V.replicate s2 (-1)

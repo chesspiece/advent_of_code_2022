@@ -198,7 +198,14 @@ day8 = do
   let initial_vec_rev_rows = V.replicate 10 (s1 - 1)
   let initial_vec_rev_columns = V.replicate 10 (s2 - 1)
 
-  let task = TaskState {_boardState = input_stream, _compState = initial_sol, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec}
+  let task =
+        TaskState
+          { _boardState = input_stream,
+            _compState = initial_sol,
+            _maxColumns = s1 - 1,
+            _maxRows = s2 - 1,
+            _helperVec = initial_vec
+          }
   let firstPart = V.toList . V.map V.toList $ evalState (firstRun 0 0) task
   let secondPart = V.toList . V.map V.toList $ evalState (secondRun 0 0) task
   let thirdPart = V.toList . V.map V.toList $ evalState (thirdRun (s1 - 1) (s2 - 1)) task
@@ -210,9 +217,30 @@ day8 = do
   print $ sum $ map sum res
 
   let initial_sol2 = V.replicate s1 $ V.replicate s2 0
-  let task2 = TaskState {_boardState = input_stream, _compState = initial_sol2, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec}
-  let task2_rev_columns = TaskState {_boardState = input_stream, _compState = initial_sol2, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec_rev_columns}
-  let task2_rev_rows = TaskState {_boardState = input_stream, _compState = initial_sol2, _maxColumns = s1 - 1, _maxRows = s2 - 1, _helperVec = initial_vec_rev_rows}
+  let task2 =
+        TaskState
+          { _boardState = input_stream,
+            _compState = initial_sol2,
+            _maxColumns = s1 - 1,
+            _maxRows = s2 - 1,
+            _helperVec = initial_vec
+          }
+  let task2_rev_columns =
+        TaskState
+          { _boardState = input_stream,
+            _compState = initial_sol2,
+            _maxColumns = s1 - 1,
+            _maxRows = s2 - 1,
+            _helperVec = initial_vec_rev_columns
+          }
+  let task2_rev_rows =
+        TaskState
+          { _boardState = input_stream,
+            _compState = initial_sol2,
+            _maxColumns = s1 - 1,
+            _maxRows = s2 - 1,
+            _helperVec = initial_vec_rev_rows
+          }
   let firstPart2 = V.toList . V.map V.toList $ evalState (firstRun2 0 0) task2
   let secondPart2 = V.toList . V.map V.toList $ evalState (secondRun2 0 0) task2
   let thirdPart2 = V.toList . V.map V.toList $ evalState (thirdRun2 (s1 - 1) (s2 - 1)) task2_rev_columns

@@ -49,7 +49,7 @@ library
                      Day4, Day5, Day6,
                      Day7, Day8
     build-depends:
-        base ^>=4.18, split ^>=0.2,
+        base ^>=4.19, split ^>=0.2,
         containers ^>=0.6, Stack ^>=0.4,
         lens ^>=5.2, megaparsec ^>= 9.5,
         vector ^>=0.13, text ^>=2,
@@ -71,7 +71,7 @@ executable adventofcode2022
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.18,
+        base ^>=4.19,
         adventofcode2022
 
     -- Directories containing source files.

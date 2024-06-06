@@ -1,4 +1,5 @@
-cabal-version:      3.6
+cabal-version:   3.6
+
 -- The cabal-version field refers to the version of the .cabal specification,
 -- and can be different from the cabal-install (the tool) version and the
 -- Cabal (the library) version you are using. As such, the Cabal (the library)
@@ -11,7 +12,7 @@ cabal-version:      3.6
 --   http://haskell.org/cabal/users-guide/
 --
 -- The name of the package.
-name:               adventofcode2022
+name:            adventofcode2022
 
 -- The package version.
 -- See the Haskell package versioning policy (PVP) for standards
@@ -20,7 +21,7 @@ name:               adventofcode2022
 -- PVP summary:     +-+------- breaking API changes
 --                  | | +----- non-breaking API additions
 --                  | | | +--- code changes with no API change
-version:            0.1.0.0
+version:         0.1.0.0
 
 -- A short (one-line) description of the package.
 -- synopsis:
@@ -29,13 +30,13 @@ version:            0.1.0.0
 -- description:
 
 -- The license under which the package is released.
-license:            MIT
+license:         MIT
 
 -- The file containing the license text.
-license-file:       LICENSE
+license-file:    LICENSE
 
 -- Extra doc files to be distributed with the package, such as a CHANGELOG or a README.
-extra-doc-files:    README.md
+extra-doc-files: README.md
 
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
@@ -44,16 +45,29 @@ common warnings
     ghc-options: -Wall
 
 library
-    hs-source-dirs: src
-    exposed-modules: Day1, Day2, Day3,
-                     Day4, Day5, Day6,
-                     Day7, Day8
+    hs-source-dirs:   src
+    exposed-modules:
+        Day1
+        Day2
+        Day3
+        Day4
+        Day5
+        Day6
+        Day7
+        Day8
+
     build-depends:
-        base ^>=4.19, split ^>=0.2,
-        containers ^>=0.6, Stack ^>=0.4,
-        lens ^>=5.2, megaparsec ^>= 9.5,
-        vector ^>=0.13, text ^>=2,
-        mtl ^>=2.3, strict ^>=0.5
+        , base
+        , containers
+        , lens
+        , megaparsec
+        , mtl
+        , split
+        , Stack
+        , strict
+        , text
+        , vector
+
     default-language: Haskell2010
 
 executable adventofcode2022
@@ -71,8 +85,8 @@ executable adventofcode2022
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.19,
-        adventofcode2022
+        , adventofcode2022
+        , base
 
     -- Directories containing source files.
     hs-source-dirs:   app

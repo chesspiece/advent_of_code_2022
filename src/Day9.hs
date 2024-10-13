@@ -48,7 +48,7 @@ stateProc i = do
 
 day9 :: IO ()
 day9 = do
-    inputs <- readFile "./task_8.txt" >>= return . map ((\x -> (head x, read (x !! 1) :: Integer)) . splitOn " ") . lines
+    inputs <- readFile "./task_9.txt" >>= return . map ((\x -> (head x, read (x !! 1) :: Integer)) . splitOn " ") . lines
     let initilState =
             TaskState
                 { _coord_head = (0, 0)

@@ -17,6 +17,7 @@ chooseDay day_num = case day_num of
   6 -> day6
   7 -> day7
   8 -> day8
+  -- 9 -> day9
   _ -> putStrLn "Day with this number is unimplemented"
 
 main :: IO ()

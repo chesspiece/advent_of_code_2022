@@ -29,28 +29,21 @@ data TaskState = TaskState
 
 makeLenses ''TaskState
 
-newState :: String -> Coordinate -> Coordinate
-newState "U" coord = (fst coord, snd coord + 1)
-newState "D" coord = (fst coord, snd coord - 1)
-newState "R" coord = (fst coord + 1, snd coord)
-newState "L" coord = (fst coord - 1, snd coord)
-
-processInstructoin :: String -> Int -> State TaskState TaskState
-processInstructoin _ 0 =
-    get
-processInstructoin move cnt = do
-    curr_state <- get
-    let new_state = newState move (_coord_head curr_state) -- (fst (_coord_head curr_state), snd (_coord_head curr_state) + 1)
-    put $ curr_state & coord_head .~ new_state
-    processInstructoin move (cnt - 1)
+newState :: String -> Int -> Coordinate -> Coordinate
+newState "U" num_steps coord = (fst coord, snd coord + num_steps)
+newState "D" num_steps coord = (fst coord, snd coord - num_steps)
+newState "R" num_steps coord = (fst coord + num_steps, snd coord)
+newState "L" num_steps coord = (fst coord - num_steps, snd coord)
 
 stateProc :: [Instruction] -> State TaskState Int
 stateProc [] =
     _count <$> get
 stateProc i = do
+    curr_state <- get
     let move = fst $ head i
     let cnt = snd $ head i
-    processInstructoin move cnt
+    put $ curr_state & coord_head .~ newState move cnt (_coord_head curr_state)
+    -- need to process tail coordinates
     stateProc (tail i)
 
 day9 :: IO ()

@@ -30,11 +30,10 @@ data TaskState = TaskState
 makeLenses ''TaskState
 
 newState :: String -> Coordinate -> Coordinate
-newState "U" coord= (fst coord, snd coord + 1)
-newState "D" coord= (fst coord, snd coord - 1)
-newState "R" coord= (fst coord + 1, snd coord)
-newState "L" coord= (fst coord - 1, snd coord)
-
+newState "U" coord = (fst coord, snd coord + 1)
+newState "D" coord = (fst coord, snd coord - 1)
+newState "R" coord = (fst coord + 1, snd coord)
+newState "L" coord = (fst coord - 1, snd coord)
 
 processInstructoin :: String -> Int -> State TaskState TaskState
 processInstructoin _ 0 =
@@ -50,8 +49,8 @@ stateProc [] =
     _count <$> get
 stateProc i = do
     let move = fst $ head i
-    let cnt =  snd $ head i
-    currSt <- get
+    let cnt = snd $ head i
+    processInstructoin move cnt
     stateProc (tail i)
 
 day9 :: IO ()

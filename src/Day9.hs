@@ -37,7 +37,7 @@ newState "L" num_steps coord = (fst coord - num_steps, snd coord)
 
 stateProc :: [Instruction] -> State TaskState Int
 stateProc [] =
-    _count <$> get
+    fmap _count get
 stateProc i = do
     curr_state <- get
     let move = fst $ head i

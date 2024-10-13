@@ -38,13 +38,13 @@ newState "L" num_steps coord = (fst coord - num_steps, snd coord)
 stateProc :: [Instruction] -> State TaskState Int
 stateProc [] =
     fmap _count get
-stateProc i = do
+stateProc instructions = do
     curr_state <- get
-    let move = fst $ head i
-    let cnt = snd $ head i
-    put $ curr_state & coord_head .~ newState move cnt (_coord_head curr_state)
+    let move = fst $ head instructions
+    let count = snd $ head instructions
+    put $ curr_state & coord_head .~ newState move count (_coord_head curr_state)
     -- need to process tail coordinates
-    stateProc (tail i)
+    stateProc (tail instructions)
 
 day9 :: IO ()
 day9 = do

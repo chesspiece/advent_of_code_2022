@@ -29,11 +29,39 @@ data TaskState = TaskState
 
 makeLenses ''TaskState
 
-newState :: String -> Int -> Coordinate -> Coordinate
-newState "U" num_steps coord = (fst coord, snd coord + num_steps)
-newState "D" num_steps coord = (fst coord, snd coord - num_steps)
-newState "R" num_steps coord = (fst coord + num_steps, snd coord)
-newState "L" num_steps coord = (fst coord - num_steps, snd coord)
+newStateHead :: String -> Int -> Coordinate -> Coordinate
+newStateHead "U" num_steps coord = (fst coord, snd coord + num_steps)
+newStateHead "D" num_steps coord = (fst coord, snd coord - num_steps)
+newStateHead "R" num_steps coord = (fst coord + num_steps, snd coord)
+newStateHead "L" num_steps coord = (fst coord - num_steps, snd coord)
+
+
+coordMinus :: Coordinate -> Coordinate -> Coordinate
+coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
+
+coordCheck :: Coordinate -> Coordinate -> Int
+coordCheck (x1, y1) (x2, y2) = abs (x1 - x2) + abs(y1 - y2)
+
+--tailDirMap :: Coordinate -> String
+--tailDirMap (0, 0) = "N"
+--tailDirMap (0, _) = "V"
+--tailDirMap (_, 0) = "D"
+--tailDirMap (x, y)
+--    | x>0 && y>0 = "R"
+--    | x<0 && y<0 = "L"
+--    | x>0 && y<0 = "DR"
+--    | x<0 && y>0 = "UL"
+
+computeTailDirection :: Coordinate -> Coordinate -> Coordinate
+computeTailDirection a b = a
+
+
+
+--newStateTail :: Coordinate -> Coordinate -> Coordinate
+--newStateTail "U" coord = (fst coord, snd coord + num_steps)
+--newStateTail "D" coord = (fst coord, snd coord - num_steps)
+--newStateTail "R" coord = (fst coord + num_steps, snd coord)
+--newStateTail "L" coord = (fst coord - num_steps, snd coord)
 
 stateProc :: [Instruction] -> State TaskState Int
 stateProc [] =
@@ -41,14 +69,17 @@ stateProc [] =
 stateProc instructions = do
     curr_state <- get
     let move = fst $ head instructions
-    let count = snd $ head instructions
-    put $ curr_state & coord_head .~ newState move count (_coord_head curr_state)
+    let count_move = snd $ head instructions
+    let new_coord = newStateHead move count_move (_coord_head curr_state)
+    let new_state = curr_state & (coord_head .~ new_coord) & (count .~ 10)
+    put new_state
     -- need to process tail coordinates
     stateProc (tail instructions)
 
 day9 :: IO ()
 day9 = do
-    inputs <- readFile "./task_9.txt" >>= return . map ((\x -> (head x, read (x !! 1) :: Integer)) . splitOn " ") . lines
+    print "test2"
+    inputs <- readFile "./task_9.txt" >>= return . map ((\x -> (head x, read (x !! 1) :: Int)) . splitOn " ") . lines
     let initilState =
             TaskState
                 { _coord_head = (0, 0)
@@ -56,4 +87,6 @@ day9 = do
                 , _check_visited = HM.singleton (0, 0) True
                 , _count = 1
                 }
-    print "Test"
+    let fourthPart2 = evalState (stateProc inputs) initilState
+    print "test2"
+    print fourthPart2

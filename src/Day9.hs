@@ -15,7 +15,6 @@ import qualified Data.List.NonEmpty as DL
 import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import Debug.Trace
 
 type Instruction = (String, Int)
 type Coordinate = (Int, Int)

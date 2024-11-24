@@ -5,7 +5,7 @@
 {-# HLINT ignore "Use gets" #-}
 module Day9 (day9) where
 
-import Control.Lens
+import Control.Lens ( (&), (.~), makeLenses )
 
 import Control.Arrow (Arrow (second))
 import Control.Monad.State (MonadState (get, put), State, evalState, gets, runState)

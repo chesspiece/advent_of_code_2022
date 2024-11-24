@@ -28,7 +28,7 @@ data TaskState = TaskState
     }
     deriving (Show)
 
-data Direction = None | CurrentHead | Vertical | Horizontal | RightVertical | LeftVertical | UpHorizaontal | DownHorizontal
+data Direction = None | CurrentHead | Up | Down | Left | Right | RightVertical | LeftVertical | UpHorizaontal | DownHorizontal
     deriving (Eq)
 
 makeLenses ''TaskState
@@ -42,24 +42,37 @@ newCoordHead "L" num_steps coord = (fst coord - num_steps, snd coord)
 coordMinus :: Coordinate -> Coordinate -> Coordinate
 coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
-coordCheck :: Coordinate -> Coordinate -> Metric
-coordCheck (x1, y1) (x2, y2) = Metric $ abs (x1 - x2) + abs (y1 - y2)
+coordMetric :: Coordinate -> Coordinate -> Metric
+coordMetric (x1, y1) (x2, y2) = Metric $ max (max (abs (x1 - x2)) (abs (y1 - y2))) 1
 
 tailDirMap :: Coordinate -> Direction
 tailDirMap (1, 1) = None
 tailDirMap (0, 0) = CurrentHead
-tailDirMap (0, _) = Vertical
-tailDirMap (_, 0) = Horizontal
+tailDirMap (0, y)
+    | y > 0 = Up
+    | y < 0 = Down
+tailDirMap (x, 0)
+    | x > 0 = Day9.Right
+    | x < 0 = Day9.Left
 tailDirMap (1, y) = RightVertical
 tailDirMap (-1, y) = LeftVertical
 tailDirMap (x, 1) = UpHorizaontal
 tailDirMap (x, -1) = DownHorizontal
 tailDirMap (_, _) = error "Should be impossible in this task"
 
-computeTailDirection :: Metric -> Coordinate -> Coordinate -> Coordinate
-computeTailDirection (Metric 0) a b = a
-computeTailDirection (Metric 1) a b = a
-computeTailDirection _ a b = a
+tailMoveOneStep :: Direction -> Coordinate -> Coordinate
+tailMoveOneStep None a = a
+tailMoveOneStep CurrentHead a = a
+tailMoveOneStep Vertical (x, y) = (x + 1, y)
+tailMoveOneStep Horizontal a = a
+
+computeTailDirection :: Metric -> State TaskState Int
+computeTailDirection (Metric 1) = fmap _count get
+computeTailDirection _ = do
+    curr_state <- get
+    let curr_map = _check_visited curr_state
+    let metric = coordMetric (_coord_head curr_state) (_coord_tail curr_state)
+    computeTailDirection metric
 
 -- newStateTail :: Coordinate -> Coordinate -> Coordinate
 -- newStateTail "U" coord = (fst coord, snd coord + num_steps)

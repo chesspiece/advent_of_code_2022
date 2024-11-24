@@ -54,23 +54,44 @@ tailDirMap (0, y)
 tailDirMap (x, 0)
     | x > 0 = Day9.Right
     | x < 0 = Day9.Left
-tailDirMap (1, y) = RightVertical
-tailDirMap (-1, y) = LeftVertical
-tailDirMap (x, 1) = UpHorizaontal
-tailDirMap (x, -1) = DownHorizontal
+tailDirMap (1, y)
+    | y > 0 = RightUp
+    | y < 0 = RightDown
+tailDirMap (-1, y)
+    | y > 0 = LeftUp
+    | y < 0 = LeftDown
+tailDirMap (x, 1)
+    | x > 0 = RightUp
+    | x < 0 = LeftUp
+tailDirMap (x, -1)
+    | x > 0 = RightDown
+    | x < 0 = LeftDown
 tailDirMap (_, _) = error "Should be impossible in this task"
 
 tailMoveOneStep :: Direction -> Coordinate -> Coordinate
 tailMoveOneStep None a = a
 tailMoveOneStep CurrentHead a = a
-tailMoveOneStep Vertical (x, y) = (x + 1, y)
-tailMoveOneStep Horizontal a = a
+tailMoveOneStep Up (x, y) = (x, y + 1)
+tailMoveOneStep Down (x, y) = (x, y - 1)
+tailMoveOneStep Day9.RightUp (x, y) = (x + 1, y + 1)
+tailMoveOneStep Day9.RightDown (x, y) = (x + 1, y - 1)
+tailMoveOneStep Day9.LeftUp (x, y) = (x - 1, y + 1)
+tailMoveOneStep Day9.LeftDown (x, y) = (x - 1, y - 1)
 
 computeTailDirection :: Metric -> State TaskState Int
 computeTailDirection (Metric 1) = fmap _count get
 computeTailDirection _ = do
     curr_state <- get
-    let curr_map = _check_visited curr_state
+    let curr_check_visited = _check_visited curr_state
+    let curr_count = _count curr_state
+
+    let tail_direction = tailDirMap $ coordMinus (_coord_head curr_state) (_coord_tail curr_state)
+    let new_tail_coord = tailMoveOneStep tail_direction (_coord_tail curr_state)
+
+    let check_coord = if HM.member new_tail_coord curr_check_visited then 1 else 0
+
+    let new_state = curr_state & (check_visited .~ (HM.insert new_tail_coord True curr_check_visited)) & (count .~ (curr_count + check_coord)) & (coord_tail .~ new_tail_coord)
+
     let metric = coordMetric (_coord_head curr_state) (_coord_tail curr_state)
     computeTailDirection metric
 

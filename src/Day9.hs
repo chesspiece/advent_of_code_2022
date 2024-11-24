@@ -28,6 +28,9 @@ data TaskState = TaskState
     }
     deriving (Show)
 
+data Direction = None | CurrentHead | Vertical | Horizontal | RightVertical | LeftVertical | UpHorizaontal | DownHorizontal
+    deriving (Eq)
+
 makeLenses ''TaskState
 
 newCoordHead :: String -> Int -> Coordinate -> Coordinate
@@ -42,15 +45,15 @@ coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 coordCheck :: Coordinate -> Coordinate -> Metric
 coordCheck (x1, y1) (x2, y2) = Metric $ abs (x1 - x2) + abs (y1 - y2)
 
-tailDirMap :: Coordinate -> String
-tailDirMap (1, 1) = "None"
-tailDirMap (0, 0) = "CurrentHead"
-tailDirMap (0, _) = "Vertical"
-tailDirMap (_, 0) = "Horizontal"
-tailDirMap (1, y) = "RightVertical"
-tailDirMap (-1, y) = "LeftVertical"
-tailDirMap (x, 1) = "UpHorizaontal"
-tailDirMap (x, -1) = "LeftHorizontal"
+tailDirMap :: Coordinate -> Direction
+tailDirMap (1, 1) = None
+tailDirMap (0, 0) = CurrentHead
+tailDirMap (0, _) = Vertical
+tailDirMap (_, 0) = Horizontal
+tailDirMap (1, y) = RightVertical
+tailDirMap (-1, y) = LeftVertical
+tailDirMap (x, 1) = UpHorizaontal
+tailDirMap (x, -1) = DownHorizontal
 tailDirMap (_, _) = error "Should be impossible in this task"
 
 computeTailDirection :: Metric -> Coordinate -> Coordinate -> Coordinate

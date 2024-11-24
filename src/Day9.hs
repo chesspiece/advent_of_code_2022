@@ -30,11 +30,11 @@ data TaskState = TaskState
 
 makeLenses ''TaskState
 
-newStateHead :: String -> Int -> Coordinate -> Coordinate
-newStateHead "U" num_steps coord = (fst coord, snd coord + num_steps)
-newStateHead "D" num_steps coord = (fst coord, snd coord - num_steps)
-newStateHead "R" num_steps coord = (fst coord + num_steps, snd coord)
-newStateHead "L" num_steps coord = (fst coord - num_steps, snd coord)
+newCoordHead :: String -> Int -> Coordinate -> Coordinate
+newCoordHead "U" num_steps coord = (fst coord, snd coord + num_steps)
+newCoordHead "D" num_steps coord = (fst coord, snd coord - num_steps)
+newCoordHead "R" num_steps coord = (fst coord + num_steps, snd coord)
+newCoordHead "L" num_steps coord = (fst coord - num_steps, snd coord)
 
 coordMinus :: Coordinate -> Coordinate -> Coordinate
 coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
@@ -42,15 +42,16 @@ coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 coordCheck :: Coordinate -> Coordinate -> Metric
 coordCheck (x1, y1) (x2, y2) = Metric $ abs (x1 - x2) + abs (y1 - y2)
 
--- tailDirMap :: Coordinate -> String
--- tailDirMap (0, 0) = "N"
--- tailDirMap (0, _) = "V"
--- tailDirMap (_, 0) = "D"
--- tailDirMap (x, y)
---    | x>0 && y>0 = "R"
---    | x<0 && y<0 = "L"
---    | x>0 && y<0 = "DR"
---    | x<0 && y>0 = "UL"
+tailDirMap :: Coordinate -> String
+tailDirMap (1, 1) = "None"
+tailDirMap (0, 0) = "CurrentHead"
+tailDirMap (0, _) = "Vertical"
+tailDirMap (_, 0) = "Horizontal"
+tailDirMap (1, y) = "RightVertical"
+tailDirMap (-1, y) = "LeftVertical"
+tailDirMap (x, 1) = "UpHorizaontal"
+tailDirMap (x, -1) = "LeftHorizontal"
+tailDirMap (_, _) = error "Should be impossible in this task"
 
 computeTailDirection :: Metric -> Coordinate -> Coordinate -> Coordinate
 computeTailDirection (Metric 0) a b = a
@@ -70,10 +71,10 @@ stateProc instructions = do
     curr_state <- get
     let move = fst $ head instructions
     let count_move = snd $ head instructions
-    let new_coord = newStateHead move count_move (_coord_head curr_state)
-    let new_state = curr_state & (coord_head .~ new_coord) & (count .~ 10)
-    put new_state
+    let new_coord_head = newCoordHead move count_move (_coord_head curr_state)
     -- need to process tail coordinates
+    let new_state = curr_state & (coord_head .~ new_coord_head) & (count .~ 10)
+    put new_state
     stateProc (tail instructions)
 
 day9 :: IO ()
@@ -87,6 +88,6 @@ day9 = do
                 , _check_visited = HM.singleton (0, 0) True
                 , _count = 1
                 }
-    let fourthPart2 = evalState (stateProc inputs) initialState
+    let count = evalState (stateProc inputs) initialState
     print "test2"
-    print fourthPart2
+    print count

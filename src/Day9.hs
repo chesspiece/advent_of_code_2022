@@ -90,7 +90,11 @@ computeTailDirection _ = do
 
     let check_coord = if HM.member new_tail_coord curr_check_visited then 1 else 0
 
-    let new_state = curr_state & (check_visited .~ (HM.insert new_tail_coord True curr_check_visited)) & (count .~ (curr_count + check_coord)) & (coord_tail .~ new_tail_coord)
+    let new_state =
+            curr_state
+                & (check_visited .~ (HM.insert new_tail_coord True curr_check_visited))
+                & (count .~ (curr_count + check_coord))
+                & (coord_tail .~ new_tail_coord)
 
     let metric = coordMetric (_coord_head curr_state) (_coord_tail curr_state)
     computeTailDirection metric
@@ -117,7 +121,9 @@ stateProc instructions = do
 day9 :: IO ()
 day9 = do
     print "test2"
-    inputs <- readFile "./task_9.txt" >>= return . map ((\x -> (head x, read (x !! 1) :: Int)) . splitOn " ") . lines
+    inputs <-
+        readFile "./task_9.txt"
+            >>= return . map ((\x -> (head x, read (x !! 1) :: Int)) . splitOn " ") . lines
     let initialState =
             TaskState
                 { _coord_head = (0, 0)

@@ -18,6 +18,7 @@ import qualified Data.Vector as V
 
 type Instruction = (String, Int)
 type Coordinate = (Int, Int)
+newtype Metric = Metric Int
 
 data TaskState = TaskState
     { _coord_head :: Coordinate
@@ -35,33 +36,32 @@ newStateHead "D" num_steps coord = (fst coord, snd coord - num_steps)
 newStateHead "R" num_steps coord = (fst coord + num_steps, snd coord)
 newStateHead "L" num_steps coord = (fst coord - num_steps, snd coord)
 
-
 coordMinus :: Coordinate -> Coordinate -> Coordinate
 coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
-coordCheck :: Coordinate -> Coordinate -> Int
-coordCheck (x1, y1) (x2, y2) = abs (x1 - x2) + abs(y1 - y2)
+coordCheck :: Coordinate -> Coordinate -> Metric
+coordCheck (x1, y1) (x2, y2) = Metric $ abs (x1 - x2) + abs (y1 - y2)
 
---tailDirMap :: Coordinate -> String
---tailDirMap (0, 0) = "N"
---tailDirMap (0, _) = "V"
---tailDirMap (_, 0) = "D"
---tailDirMap (x, y)
+-- tailDirMap :: Coordinate -> String
+-- tailDirMap (0, 0) = "N"
+-- tailDirMap (0, _) = "V"
+-- tailDirMap (_, 0) = "D"
+-- tailDirMap (x, y)
 --    | x>0 && y>0 = "R"
 --    | x<0 && y<0 = "L"
 --    | x>0 && y<0 = "DR"
 --    | x<0 && y>0 = "UL"
 
-computeTailDirection :: Coordinate -> Coordinate -> Coordinate
-computeTailDirection a b = a
+computeTailDirection :: Metric -> Coordinate -> Coordinate -> Coordinate
+computeTailDirection (Metric 0) a b = a
+computeTailDirection (Metric 1) a b = a
+computeTailDirection _ a b = a
 
-
-
---newStateTail :: Coordinate -> Coordinate -> Coordinate
---newStateTail "U" coord = (fst coord, snd coord + num_steps)
---newStateTail "D" coord = (fst coord, snd coord - num_steps)
---newStateTail "R" coord = (fst coord + num_steps, snd coord)
---newStateTail "L" coord = (fst coord - num_steps, snd coord)
+-- newStateTail :: Coordinate -> Coordinate -> Coordinate
+-- newStateTail "U" coord = (fst coord, snd coord + num_steps)
+-- newStateTail "D" coord = (fst coord, snd coord - num_steps)
+-- newStateTail "R" coord = (fst coord + num_steps, snd coord)
+-- newStateTail "L" coord = (fst coord - num_steps, snd coord)
 
 stateProc :: [Instruction] -> State TaskState Int
 stateProc [] =
@@ -80,13 +80,13 @@ day9 :: IO ()
 day9 = do
     print "test2"
     inputs <- readFile "./task_9.txt" >>= return . map ((\x -> (head x, read (x !! 1) :: Int)) . splitOn " ") . lines
-    let initilState =
+    let initialState =
             TaskState
                 { _coord_head = (0, 0)
                 , _coord_tail = (0, 0)
                 , _check_visited = HM.singleton (0, 0) True
                 , _count = 1
                 }
-    let fourthPart2 = evalState (stateProc inputs) initilState
+    let fourthPart2 = evalState (stateProc inputs) initialState
     print "test2"
     print fourthPart2

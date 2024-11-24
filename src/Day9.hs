@@ -15,10 +15,12 @@ import qualified Data.List.NonEmpty as DL
 import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import Debug.Trace
 
 type Instruction = (String, Int)
 type Coordinate = (Int, Int)
 newtype Metric = Metric Int
+    deriving (Show)
 
 data TaskState = TaskState
     { _coord_head :: Coordinate
@@ -29,7 +31,7 @@ data TaskState = TaskState
     deriving (Show)
 
 data Direction = None | CurrentHead | Up | Down | Left | Right | RightUp | RightDown | LeftUp | LeftDown
-    deriving (Eq)
+    deriving (Eq, Show)
 
 makeLenses ''TaskState
 
@@ -73,10 +75,12 @@ tailMoveOneStep None a = a
 tailMoveOneStep CurrentHead a = a
 tailMoveOneStep Up (x, y) = (x, y + 1)
 tailMoveOneStep Down (x, y) = (x, y - 1)
-tailMoveOneStep Day9.RightUp (x, y) = (x + 1, y + 1)
-tailMoveOneStep Day9.RightDown (x, y) = (x + 1, y - 1)
-tailMoveOneStep Day9.LeftUp (x, y) = (x - 1, y + 1)
-tailMoveOneStep Day9.LeftDown (x, y) = (x - 1, y - 1)
+tailMoveOneStep Day9.Right (x, y) = (x + 1, y)
+tailMoveOneStep Day9.Left (x, y) = (x - 1, y)
+tailMoveOneStep RightUp (x, y) = (x + 1, y + 1)
+tailMoveOneStep RightDown (x, y) = (x + 1, y - 1)
+tailMoveOneStep LeftUp (x, y) = (x - 1, y + 1)
+tailMoveOneStep LeftDown (x, y) = (x - 1, y - 1)
 
 computeTailDirection :: Metric -> State TaskState Int
 computeTailDirection (Metric 1) = fmap _count get
@@ -88,39 +92,35 @@ computeTailDirection _ = do
     let tail_direction = tailDirMap $ coordMinus (_coord_head curr_state) (_coord_tail curr_state)
     let new_tail_coord = tailMoveOneStep tail_direction (_coord_tail curr_state)
 
-    let check_coord = if HM.member new_tail_coord curr_check_visited then 1 else 0
+    let check_coord = if HM.member new_tail_coord curr_check_visited then 0 else 1
 
     let new_state =
             curr_state
                 & (check_visited .~ (HM.insert new_tail_coord True curr_check_visited))
                 & (count .~ (curr_count + check_coord))
                 & (coord_tail .~ new_tail_coord)
+    put new_state
 
-    let metric = coordMetric (_coord_head curr_state) (_coord_tail curr_state)
+    let metric = coordMetric (_coord_head curr_state) new_tail_coord
     computeTailDirection metric
 
--- newStateTail :: Coordinate -> Coordinate -> Coordinate
--- newStateTail "U" coord = (fst coord, snd coord + num_steps)
--- newStateTail "D" coord = (fst coord, snd coord - num_steps)
--- newStateTail "R" coord = (fst coord + num_steps, snd coord)
--- newStateTail "L" coord = (fst coord - num_steps, snd coord)
-
 stateProc :: [Instruction] -> State TaskState Int
-stateProc [] =
-    fmap _count get
+stateProc [] = do
+    _count <$> get
 stateProc instructions = do
-    curr_state <- get
     let move = fst $ head instructions
     let count_move = snd $ head instructions
+    curr_state <- get
     let new_coord_head = newCoordHead move count_move (_coord_head curr_state)
-    -- need to process tail coordinates
-    let new_state = curr_state & (coord_head .~ new_coord_head) & (count .~ 10)
+
+    let new_state = curr_state & (coord_head .~ new_coord_head)
     put new_state
+
+    computeTailDirection $ coordMetric new_coord_head (_coord_tail curr_state)
     stateProc (tail instructions)
 
 day9 :: IO ()
 day9 = do
-    print "test2"
     inputs <-
         readFile "./task_9.txt"
             >>= return . map ((\x -> (head x, read (x !! 1) :: Int)) . splitOn " ") . lines
@@ -132,5 +132,4 @@ day9 = do
                 , _count = 1
                 }
     let count = evalState (stateProc inputs) initialState
-    print "test2"
     print count

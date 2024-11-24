@@ -28,7 +28,7 @@ data TaskState = TaskState
     }
     deriving (Show)
 
-data Direction = None | CurrentHead | Up | Down | Left | Right | RightVertical | LeftVertical | UpHorizaontal | DownHorizontal
+data Direction = None | CurrentHead | Up | Down | Left | Right | RightUp | RightDown | LeftUp | LeftDown
     deriving (Eq)
 
 makeLenses ''TaskState

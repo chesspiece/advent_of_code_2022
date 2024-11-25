@@ -29,10 +29,21 @@ data TaskState = TaskState
     }
     deriving (Show)
 
+data TaskStatePart2 = TaskStatePart2
+    { _coord_head_part2 :: [Coordinate]
+    , _last_knot_coord_part2 :: Coordinate
+    , _coord_tail_part2 :: Coordinate
+    , _check_visited_part2 :: HM.Map Coordinate Bool
+    , _count_part2 :: Int
+    }
+    deriving (Show)
+
 data Direction = None | CurrentHead | Up | Down | Left | Right | RightUp | RightDown | LeftUp | LeftDown
     deriving (Eq, Show)
 
 makeLenses ''TaskState
+makeLenses ''TaskStatePart2
+
 
 newCoordHead :: String -> Int -> Coordinate -> Coordinate
 newCoordHead "U" num_steps coord = (fst coord, snd coord + num_steps)
@@ -131,4 +142,14 @@ day9 = do
                 , _count = 1
                 }
     let count = evalState (stateProc inputs) initialState
+    print count
+    let initialStatePart2 =
+            TaskStatePart2
+                { _coord_head_part2 = [(0, 0) | _ <- [0..8]]
+                , _last_knot_coord_part2 = (0, 0)
+                , _coord_tail_part2 = (0, 0)
+                , _check_visited_part2 = HM.singleton (0, 0) True
+                , _count_part2 = 1
+                }
+    -- let count = evalState (stateProc inputs) initialState
     print count

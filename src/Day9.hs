@@ -110,10 +110,16 @@ knotMove LeftDown (Metric m) (x, y) = knotMove LeftDown (Metric (m - 1)) (x - 1,
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
 processKnots (x : []) coord_list =
     let
-        x = x
-        coord_list = coord_list
+        x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
+        coord_list2 = reverse $ x2 : coord_list
      in
         (coord_list, x)
+processKnots (x : xs) coord_list =
+    let
+        x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
+        coord_list2 = x2 : coord_list
+     in
+        processKnots xs coord_list2
 
 computeTailDirection :: Metric -> State TaskState Int
 computeTailDirection (Metric 1) = fmap _count get

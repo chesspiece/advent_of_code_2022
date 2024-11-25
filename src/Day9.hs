@@ -91,21 +91,21 @@ tailMoveOneStep RightDown (x, y) = (x + 1, y - 1)
 tailMoveOneStep LeftUp (x, y) = (x - 1, y + 1)
 tailMoveOneStep LeftDown (x, y) = (x - 1, y - 1)
 
-knotMoveOneStep :: Direction -> Metric -> Coordinate -> Coordinate
-knotMoveOneStep None _ a = a
-knotMoveOneStep CurrentHead _ a = a
-knotMoveOneStep Up (Metric m) (x, y) = (x, y + m - 1)
-knotMoveOneStep Down (Metric m) (x, y) = (x, y - m - 1)
-knotMoveOneStep Day9.Right (Metric m) (x, y) = (x + m - 1, y)
-knotMoveOneStep Day9.Left (Metric m) (x, y) = (x - m - 1, y)
-knotMoveOneStep RightUp (Metric 2) (x, y) = (x + 1, y + 1)
-knotMoveOneStep RightDown (Metric 2) (x, y) = (x + 1, y - 1)
-knotMoveOneStep LeftUp (Metric 2) (x, y) = (x - 1, y + 1)
-knotMoveOneStep LeftDown (Metric 2) (x, y) = (x - 1, y - 1)
-knotMoveOneStep RightUp m (x, y) = knotMoveOneStep Up m (x + 1, y + 1)
-knotMoveOneStep RightDown m (x, y) = knotMoveOneStep Down m (x + 1, y - 1)
-knotMoveOneStep LeftUp m (x, y) = knotMoveOneStep LeftUp m (x - 1, y + 1)
-knotMoveOneStep LeftDown m (x, y) = knotMoveOneStep LeftDown m (x - 1, y - 1)
+knotMove :: Direction -> Metric -> Coordinate -> Coordinate
+knotMove None _ a = a
+knotMove CurrentHead _ a = a
+knotMove Up (Metric m) (x, y) = (x, y + m - 1)
+knotMove Down (Metric m) (x, y) = (x, y - m - 1)
+knotMove Day9.Right (Metric m) (x, y) = (x + m - 1, y)
+knotMove Day9.Left (Metric m) (x, y) = (x - m - 1, y)
+knotMove RightUp (Metric 2) (x, y) = (x + 1, y + 1)
+knotMove RightDown (Metric 2) (x, y) = (x + 1, y - 1)
+knotMove LeftUp (Metric 2) (x, y) = (x - 1, y + 1)
+knotMove LeftDown (Metric 2) (x, y) = (x - 1, y - 1)
+knotMove RightUp m (x, y) = knotMove Up (m - 1) (x + 1, y + 1)
+knotMove RightDown m (x, y) = knotMove Down (m - 1) (x + 1, y - 1)
+knotMove LeftUp m (x, y) = knotMove LeftUp (m - 1) (x - 1, y + 1)
+knotMove LeftDown m (x, y) = knotMove LeftDown (m - 1) (x - 1, y - 1)
 
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
 processKnots (x : []) coord_list =

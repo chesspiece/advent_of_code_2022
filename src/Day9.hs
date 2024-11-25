@@ -5,7 +5,7 @@
 {-# HLINT ignore "Use gets" #-}
 module Day9 (day9) where
 
-import Control.Lens ( (&), (.~), makeLenses )
+import Control.Lens (makeLenses, (&), (.~))
 
 import Control.Arrow (Arrow (second))
 import Control.Monad.State (MonadState (get, put), State, evalState, gets, runState)
@@ -43,7 +43,6 @@ data Direction = None | CurrentHead | Up | Down | Left | Right | RightUp | Right
 
 makeLenses ''TaskState
 makeLenses ''TaskStatePart2
-
 
 newCoordHead :: String -> Int -> Coordinate -> Coordinate
 newCoordHead "U" num_steps coord = (fst coord, snd coord + num_steps)
@@ -91,6 +90,30 @@ tailMoveOneStep RightUp (x, y) = (x + 1, y + 1)
 tailMoveOneStep RightDown (x, y) = (x + 1, y - 1)
 tailMoveOneStep LeftUp (x, y) = (x - 1, y + 1)
 tailMoveOneStep LeftDown (x, y) = (x - 1, y - 1)
+
+knotMoveOneStep :: Direction -> Metric -> Coordinate -> Coordinate
+knotMoveOneStep None _ a = a
+knotMoveOneStep CurrentHead _ a = a
+knotMoveOneStep Up (Metric m) (x, y) = (x, y + m - 1)
+knotMoveOneStep Down (Metric m) (x, y) = (x, y - m - 1)
+knotMoveOneStep Day9.Right (Metric m) (x, y) = (x + m - 1, y)
+knotMoveOneStep Day9.Left (Metric m) (x, y) = (x - m - 1, y)
+knotMoveOneStep RightUp (Metric 2) (x, y) = (x + 1, y + 1)
+knotMoveOneStep RightDown (Metric 2) (x, y) = (x + 1, y - 1)
+knotMoveOneStep LeftUp (Metric 2) (x, y) = (x - 1, y + 1)
+knotMoveOneStep LeftDown (Metric 2) (x, y) = (x - 1, y - 1)
+knotMoveOneStep RightUp m (x, y) = knotMoveOneStep Up m (x + 1, y + 1)
+knotMoveOneStep RightDown m (x, y) = knotMoveOneStep Down m (x + 1, y - 1)
+knotMoveOneStep LeftUp m (x, y) = knotMoveOneStep LeftUp m (x - 1, y + 1)
+knotMoveOneStep LeftDown m (x, y) = knotMoveOneStep LeftDown m (x - 1, y - 1)
+
+processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
+processKnots (x : []) coord_list =
+    let
+        x = x
+        coord_list = coord_list
+     in
+        (coord_list, x)
 
 computeTailDirection :: Metric -> State TaskState Int
 computeTailDirection (Metric 1) = fmap _count get
@@ -145,7 +168,7 @@ day9 = do
     print count
     let initialStatePart2 =
             TaskStatePart2
-                { _coord_head_part2 = [(0, 0) | _ <- [0..8]]
+                { _coord_head_part2 = [(0, 0) | _ <- [0 .. 8]]
                 , _last_knot_coord_part2 = (0, 0)
                 , _coord_tail_part2 = (0, 0)
                 , _check_visited_part2 = HM.singleton (0, 0) True

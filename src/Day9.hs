@@ -15,6 +15,7 @@ import qualified Data.List.NonEmpty as DL
 import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import Debug.Trace
 
 type Instruction = (String, Int)
 type Coordinate = (Int, Int)
@@ -50,6 +51,12 @@ newCoordHead "D" num_steps coord = (fst coord, snd coord - num_steps)
 newCoordHead "R" num_steps coord = (fst coord + num_steps, snd coord)
 newCoordHead "L" num_steps coord = (fst coord - num_steps, snd coord)
 
+newCoordHeadPart2 :: String -> Int -> Coordinate -> Coordinate
+newCoordHeadPart2 "U" num_steps coord = (fst coord, snd coord + num_steps)
+newCoordHeadPart2 "D" num_steps coord = (fst coord, snd coord - num_steps)
+newCoordHeadPart2 "R" num_steps coord = (fst coord + num_steps, snd coord)
+newCoordHeadPart2 "L" num_steps coord = (fst coord - num_steps, snd coord)
+
 coordMinus :: Coordinate -> Coordinate -> Coordinate
 coordMinus (x1, y1) (x2, y2) = (x1 - x2, y1 - y2)
 
@@ -65,19 +72,11 @@ tailDirMap (0, y)
 tailDirMap (x, 0)
     | x > 0 = Day9.Right
     | x < 0 = Day9.Left
-tailDirMap (1, y)
-    | y > 0 = RightUp
-    | y < 0 = RightDown
-tailDirMap (-1, y)
-    | y > 0 = LeftUp
-    | y < 0 = LeftDown
-tailDirMap (x, 1)
-    | x > 0 = RightUp
-    | x < 0 = LeftUp
-tailDirMap (x, -1)
-    | x > 0 = RightDown
-    | x < 0 = LeftDown
-tailDirMap (_, _) = error "Should be impossible in this task"
+tailDirMap (x, y)
+    | x > 0 && y > 0 = RightUp
+    | x < 0 && y < 0 = LeftDown
+    | x > 0 && y < 0 = RightDown
+    | x < 0 && y > 0 = LeftUp
 
 tailMoveOneStep :: Direction -> Coordinate -> Coordinate
 tailMoveOneStep None a = a
@@ -95,9 +94,9 @@ knotMove :: Direction -> Metric -> Coordinate -> Coordinate
 knotMove None _ a = a
 knotMove CurrentHead _ a = a
 knotMove Up (Metric m) (x, y) = (x, y + m - 1)
-knotMove Down (Metric m) (x, y) = (x, y - m - 1)
+knotMove Down (Metric m) (x, y) = (x, y - m + 1)
 knotMove Day9.Right (Metric m) (x, y) = (x + m - 1, y)
-knotMove Day9.Left (Metric m) (x, y) = (x - m - 1, y)
+knotMove Day9.Left (Metric m) (x, y) = (x - m + 1, y)
 knotMove RightUp (Metric 2) (x, y) = (x + 1, y + 1)
 knotMove RightDown (Metric 2) (x, y) = (x + 1, y - 1)
 knotMove LeftUp (Metric 2) (x, y) = (x - 1, y + 1)
@@ -111,15 +110,34 @@ processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
 processKnots (x : []) coord_list =
     let
         x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
-        coord_list2 = reverse $ x2 : coord_list
+        coord_list2 = x2 : coord_list
      in
-        (coord_list, x)
+        (coord_list2, x)
+processKnots (x : xs) [] = processKnots xs [x]
 processKnots (x : xs) coord_list =
     let
         x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
         coord_list2 = x2 : coord_list
      in
         processKnots xs coord_list2
+
+stateProcPart2 :: [Instruction] -> State TaskStatePart2 Int
+stateProcPart2 [] = do
+    _count_part2 <$> get
+stateProcPart2 instructions = do
+    let move = fst $ head instructions
+    let count_move = snd $ head instructions
+    curr_state <- get
+
+    let new_coord_head = newCoordHead move count_move (head $ _coord_head_part2 curr_state)
+    let (a, b) = processKnots (new_coord_head : (tail $ _coord_head_part2 curr_state)) []
+    let new_state = curr_state & (coord_head_part2 .~ a) & (last_knot_coord_part2 .~ b)
+    put new_state
+    -- traceShowM a
+    -- computeTailDirectionPart2 $ traceShow (coordMetric b (_coord_tail_part2 curr_state)) (Metric 1)
+    stateProcPart2 (tail instructions)
+
+-- _count_part2 <$> get
 
 computeTailDirection :: Metric -> State TaskState Int
 computeTailDirection (Metric 1) = fmap _count get
@@ -180,5 +198,5 @@ day9 = do
                 , _check_visited_part2 = HM.singleton (0, 0) True
                 , _count_part2 = 1
                 }
-    -- let count = evalState (stateProc inputs) initialState
+    let count = evalState (stateProcPart2 inputs) initialStatePart2
     print count

@@ -95,37 +95,35 @@ knotMove None _ a = a
 knotMove CurrentHead _ a = a
 knotMove Up (Metric m) (x, y) = (x, y + m - 1)
 knotMove Down (Metric m) (x, y) = (x, y - m + 1)
-knotMove Day9.Right (Metric m) (x, y) = (x + m - 1, y)
+knotMove Day9.Right (Metric m) (x, y) = (x + m -1, y)
 knotMove Day9.Left (Metric m) (x, y) = (x - m + 1, y)
-knotMove RightUp (Metric 2) (x, y) = (x + 1, y + 1)
-knotMove RightDown (Metric 2) (x, y) = (x + 1, y - 1)
-knotMove LeftUp (Metric 2) (x, y) = (x - 1, y + 1)
-knotMove LeftDown (Metric 2) (x, y) = (x - 1, y - 1)
-knotMove RightUp (Metric m) (x, y) = knotMove Up (Metric (m - 1)) (x + 1, y + 1)
-knotMove RightDown (Metric m) (x, y) = knotMove Down (Metric (m - 1)) (x + 1, y - 1)
-knotMove LeftUp (Metric m) (x, y) = knotMove LeftUp (Metric (m - 1)) (x - 1, y + 1)
-knotMove LeftDown (Metric m) (x, y) = knotMove LeftDown (Metric (m - 1)) (x - 1, y - 1)
+knotMove RightUp (Metric m) (x, y) = (x + 1, y + 1)
+knotMove RightDown (Metric m) (x, y) = (x + 1, y - 1)
+knotMove LeftUp (Metric m) (x, y) = (x - 1, y + 1)
+knotMove LeftDown (Metric m) (x, y) = (x - 1, y - 1)
+
+knotMoveHelper :: Metric -> Coordinate -> Coordinate -> Coordinate
+knotMoveHelper (Metric 1) a b = b
+knotMoveHelper (Metric m) a b =
+    let
+        new_b = (knotMove (tailDirMap (coordMinus a b)) (coordMetric a b) b)
+     in
+        knotMoveHelper (coordMetric a new_b) a new_b
 
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
-processKnots (x : []) [] =
-    let
-        coord_list2 = [x]
-     in
-        (coord_list2, x)
 processKnots (x : []) coord_list =
     let
-        x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
+        x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x -- knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
         coord_list2 = x2 : coord_list
      in
-        (coord_list2, x2)
+        (reverse coord_list2, x2)
 processKnots (x : xs) [] = processKnots xs [x]
 processKnots (x : xs) coord_list =
     let
-        x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
+        x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x -- knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
         coord_list2 = x2 : coord_list
      in
         processKnots xs coord_list2
-
 
 computeTailDirectionPart2 :: Metric -> State TaskStatePart2 Int
 computeTailDirectionPart2 (Metric 1) = fmap _count_part2 get
@@ -149,9 +147,10 @@ computeTailDirectionPart2 _ = do
     let metric = coordMetric (_last_knot_coord_part2 curr_state) new_tail_coord
     computeTailDirectionPart2 metric
 
-
 stateProcPart2 :: [Instruction] -> State TaskStatePart2 Int
 stateProcPart2 [] = do
+    stat <- get
+    traceShowM stat
     _count_part2 <$> get
 stateProcPart2 instructions = do
     let move = fst $ head instructions
@@ -159,14 +158,12 @@ stateProcPart2 instructions = do
     curr_state <- get
 
     let new_coord_head = newCoordHead move count_move (head $ _coord_head_part2 curr_state)
-    let (a, b) = processKnots (new_coord_head : (tail $ _coord_head_part2 curr_state)) []
-    let new_state = curr_state & (coord_head_part2 .~ a) & (last_knot_coord_part2 .~ b)
+    let (curr_all_knots, curr_last_knot_coord) = processKnots (new_coord_head : (tail $ _coord_head_part2 curr_state)) []
+    let new_state =
+            curr_state & (coord_head_part2 .~ curr_all_knots) & (last_knot_coord_part2 .~ curr_last_knot_coord)
     put new_state
-    -- traceShowM a
-    computeTailDirectionPart2 $ (coordMetric b (_coord_tail_part2 curr_state))
+    computeTailDirectionPart2 $ (coordMetric curr_last_knot_coord (_coord_tail_part2 curr_state))
     stateProcPart2 (tail instructions)
-
--- _count_part2 <$> get
 
 computeTailDirection :: Metric -> State TaskState Int
 computeTailDirection (Metric 1) = fmap _count get
@@ -221,7 +218,7 @@ day9 = do
     print count
     let initialStatePart2 =
             TaskStatePart2
-                { _coord_head_part2 = [(0, 0) | _ <- [0 .. 0]]
+                { _coord_head_part2 = [(0, 0) | _ <- [0 .. 8]]
                 , _last_knot_coord_part2 = (0, 0)
                 , _coord_tail_part2 = (0, 0)
                 , _check_visited_part2 = HM.singleton (0, 0) True

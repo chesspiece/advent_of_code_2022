@@ -103,12 +103,12 @@ knotMove LeftUp (Metric m) (x, y) = (x - 1, y + 1)
 knotMove LeftDown (Metric m) (x, y) = (x - 1, y - 1)
 
 knotMoveHelper :: Metric -> Coordinate -> Coordinate -> Coordinate
-knotMoveHelper (Metric 1) a b = b
-knotMoveHelper (Metric m) a b =
+knotMoveHelper (Metric 1) coord_head coord_tail = coord_tail
+knotMoveHelper (Metric m) coord_head coord_tail =
     let
-        new_b = (knotMove (tailDirMap (coordMinus a b)) (coordMetric a b) b)
+        new_coord_tail = (knotMove (tailDirMap (coordMinus coord_head coord_tail)) (coordMetric coord_head coord_tail) coord_tail)
      in
-        knotMoveHelper (coordMetric a new_b) a new_b
+        knotMoveHelper (coordMetric coord_head new_coord_tail) coord_head new_coord_tail
 
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
 processKnots (x : []) coord_list =

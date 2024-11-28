@@ -107,12 +107,17 @@ knotMove LeftUp (Metric m) (x, y) = knotMove LeftUp (Metric (m - 1)) (x - 1, y +
 knotMove LeftDown (Metric m) (x, y) = knotMove LeftDown (Metric (m - 1)) (x - 1, y - 1)
 
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
+processKnots (x : []) [] =
+    let
+        coord_list2 = [x]
+     in
+        (coord_list2, x)
 processKnots (x : []) coord_list =
     let
         x2 = knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
         coord_list2 = x2 : coord_list
      in
-        (coord_list2, x)
+        (coord_list2, x2)
 processKnots (x : xs) [] = processKnots xs [x]
 processKnots (x : xs) coord_list =
     let
@@ -120,6 +125,30 @@ processKnots (x : xs) coord_list =
         coord_list2 = x2 : coord_list
      in
         processKnots xs coord_list2
+
+
+computeTailDirectionPart2 :: Metric -> State TaskStatePart2 Int
+computeTailDirectionPart2 (Metric 1) = fmap _count_part2 get
+computeTailDirectionPart2 _ = do
+    curr_state <- get
+    let curr_check_visited = _check_visited_part2 curr_state
+    let curr_count = _count_part2 curr_state
+
+    let tail_direction = tailDirMap $ coordMinus (_last_knot_coord_part2 curr_state) (_coord_tail_part2 curr_state)
+    let new_tail_coord = tailMoveOneStep tail_direction (_coord_tail_part2 curr_state)
+
+    let check_coord = if HM.member new_tail_coord curr_check_visited then 0 else 1
+
+    let new_state =
+            curr_state
+                & (check_visited_part2 .~ (HM.insert new_tail_coord True curr_check_visited))
+                & (count_part2 .~ (curr_count + check_coord))
+                & (coord_tail_part2 .~ new_tail_coord)
+    put new_state
+
+    let metric = coordMetric (_last_knot_coord_part2 curr_state) new_tail_coord
+    computeTailDirectionPart2 metric
+
 
 stateProcPart2 :: [Instruction] -> State TaskStatePart2 Int
 stateProcPart2 [] = do
@@ -134,7 +163,7 @@ stateProcPart2 instructions = do
     let new_state = curr_state & (coord_head_part2 .~ a) & (last_knot_coord_part2 .~ b)
     put new_state
     -- traceShowM a
-    -- computeTailDirectionPart2 $ traceShow (coordMetric b (_coord_tail_part2 curr_state)) (Metric 1)
+    computeTailDirectionPart2 $ (coordMetric b (_coord_tail_part2 curr_state))
     stateProcPart2 (tail instructions)
 
 -- _count_part2 <$> get
@@ -192,7 +221,7 @@ day9 = do
     print count
     let initialStatePart2 =
             TaskStatePart2
-                { _coord_head_part2 = [(0, 0) | _ <- [0 .. 8]]
+                { _coord_head_part2 = [(0, 0) | _ <- [0 .. 0]]
                 , _last_knot_coord_part2 = (0, 0)
                 , _coord_tail_part2 = (0, 0)
                 , _check_visited_part2 = HM.singleton (0, 0) True

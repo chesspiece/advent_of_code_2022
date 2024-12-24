@@ -93,10 +93,10 @@ tailMoveOneStep LeftDown (x, y) = (x - 1, y - 1)
 knotMove :: Direction -> Metric -> Coordinate -> Coordinate
 knotMove None _ a = a
 knotMove CurrentHead _ a = a
-knotMove Up (Metric m) (x, y) = (x, y + m - 1)
-knotMove Down (Metric m) (x, y) = (x, y - m + 1)
-knotMove Day9.Right (Metric m) (x, y) = (x + m -1, y)
-knotMove Day9.Left (Metric m) (x, y) = (x - m + 1, y)
+knotMove Up (Metric m) (x, y) = (x, y + 1)
+knotMove Down (Metric m) (x, y) = (x, y - 1)
+knotMove Day9.Right (Metric m) (x, y) = (x + 1, y)
+knotMove Day9.Left (Metric m) (x, y) = (x - 1, y)
 knotMove RightUp (Metric m) (x, y) = (x + 1, y + 1)
 knotMove RightDown (Metric m) (x, y) = (x + 1, y - 1)
 knotMove LeftUp (Metric m) (x, y) = (x - 1, y + 1)
@@ -111,6 +111,7 @@ knotMoveHelper (Metric m) coord_head coord_tail =
         knotMoveHelper (coordMetric coord_head new_coord_tail) coord_head new_coord_tail
 
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
+processKnots (x : []) [] = ([x], x)
 processKnots (x : []) coord_list =
     let
         x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x -- knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x

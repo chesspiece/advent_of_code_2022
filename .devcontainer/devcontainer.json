@@ -1,0 +1,32 @@
+{
+	"name": "Ubuntu",
+	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"features": {
+		"ghcr.io/devcontainers-extra/features/haskell:2": {
+			"installHLS": true,
+			"downgradeGhcToSupportHls": true,
+			"adjustBash": true,
+			"ghcVersion": "9.10.1",
+			"cabalVersion": "3.12.1.0",
+			"globalPackages": "",
+			"globalLibraries": "",
+			"installStack": false
+		}
+	},
+	"containerEnv": {
+            "HOME": "/home/vscode"
+    },
+	"containerUser": "vscode",
+	"updateRemoteUserUID": true,
+	"remoteUser": "vscode",
+	"customizations": {
+    "vscode": {
+      "extensions": [
+        "haskell.haskell",
+        "justusadam.language-haskell",
+        "editorconfig.editor",
+        "jcanero.hoogle-vscode"
+      ]
+    }
+  }
+}

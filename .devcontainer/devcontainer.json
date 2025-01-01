@@ -6,9 +6,9 @@
 			"installHLS": true,
 			"downgradeGhcToSupportHls": true,
 			"adjustBash": true,
-			"ghcVersion": "9.10.1",
-			"cabalVersion": "3.12.1.0",
-			"globalPackages": "",
+			"ghcVersion": "recommended",
+			"cabalVersion": "recommended",
+			"globalPackages": "hlint fourmolu",
 			"globalLibraries": "",
 			"installStack": false
 		}
@@ -16,6 +16,12 @@
 	"containerEnv": {
             "HOME": "/home/vscode"
     },
+	//"runArgs": [
+  	//	"--network=host"
+	//],
+	"remoteEnv": {
+		"PODMAN_USERNS": "keep-id"
+	},
 	"containerUser": "vscode",
 	"updateRemoteUserUID": true,
 	"remoteUser": "vscode",
@@ -27,6 +33,17 @@
         "editorconfig.editor",
         "jcanero.hoogle-vscode"
       ]
-    }
+    },
+	"settings": {
+		"haskell.manageHLS": "GHCup",
+		"git.openRepositoryInParentFolders": "never",
+		"[haskell]": {
+			"editor.defaultFormatter": "haskell.haskell",
+			"editor.tabSize": 4,
+			"editor.insertSpaces": true,
+			"editor.detectIndentation": false
+		},
+		"haskell.formattingProvider": "fourmolu"
+	}
   }
 }

@@ -14,6 +14,7 @@ import Text.Megaparsec (
     parseMaybe,
  )
 
+import Data.List (concat)
 import Data.Maybe (fromJust)
 import Data.Void (Void)
 import Text.Megaparsec.Char (char, digitChar, newline)
@@ -220,16 +221,16 @@ stateProc instructions = do
     computeTailDirection $ coordMetric new_coord_head (_coord_tail curr_state)
     stateProc (tail instructions)
 
-oneLinemySequence :: Parser Instruction
+oneLinemySequence :: Parser [Instruction]
 oneLinemySequence = do
     a <- oneOf "UDLR"
     b <- char ' '
     b <- many digitChar
     many newline
-    return ([a], read b)
+    return $ take (read b) (repeat ([a], 1))
 
 fullParser :: Parser [Instruction]
-fullParser = many oneLinemySequence
+fullParser = fmap concat $ many oneLinemySequence
 
 day9 :: IO ()
 day9 = do

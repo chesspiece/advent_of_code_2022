@@ -19,15 +19,8 @@ import Data.Maybe (fromJust)
 import Data.Void (Void)
 import Text.Megaparsec.Char (char, digitChar, newline)
 
-import Control.Arrow (Arrow (second))
 import Control.Monad.State (MonadState (get, put), State, evalState, gets, runState)
-import Data.Char (digitToInt)
 import qualified Data.HashMap as HM
-import qualified Data.List.NonEmpty as DL
-import Data.List.Split (splitOn)
-import qualified Data.Text as T
-import qualified Data.Vector as V
-import Debug.Trace
 
 type Parser = Parsec Void String
 type Instruction = (String, Int)
@@ -132,14 +125,14 @@ processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
 processKnots (x : []) [] = ([x], x)
 processKnots (x : []) coord_list =
     let
-        x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x -- knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
+        x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x
         coord_list2 = x2 : coord_list
      in
         (reverse coord_list2, x2)
 processKnots (x : xs) [] = processKnots xs [x]
 processKnots (x : xs) coord_list =
     let
-        x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x -- knotMove (tailDirMap (coordMinus (head coord_list) x)) (coordMetric (head coord_list) x) x
+        x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x
         coord_list2 = x2 : coord_list
      in
         processKnots xs coord_list2
@@ -169,7 +162,6 @@ computeTailDirectionPart2 _ = do
 stateProcPart2 :: [Instruction] -> State TaskStatePart2 Int
 stateProcPart2 [] = do
     stat <- get
-    -- traceShowM stat
     _count_part2 <$> get
 stateProcPart2 instructions = do
     let move = fst $ head instructions

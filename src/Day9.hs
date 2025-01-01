@@ -7,6 +7,17 @@ module Day9 (day9) where
 
 import Control.Lens (makeLenses, (&), (.~))
 
+import Control.Applicative (many)
+import Text.Megaparsec (
+    Parsec,
+    oneOf,
+    parseMaybe,
+ )
+
+import Data.Maybe (fromJust)
+import Data.Void (Void)
+import Text.Megaparsec.Char (char, digitChar, newline)
+
 import Control.Arrow (Arrow (second))
 import Control.Monad.State (MonadState (get, put), State, evalState, gets, runState)
 import Data.Char (digitToInt)
@@ -17,6 +28,7 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import Debug.Trace
 
+type Parser = Parsec Void String
 type Instruction = (String, Int)
 type Coordinate = (Int, Int)
 newtype Metric = Metric Int
@@ -106,7 +118,12 @@ knotMoveHelper :: Metric -> Coordinate -> Coordinate -> Coordinate
 knotMoveHelper (Metric 1) coord_head coord_tail = coord_tail
 knotMoveHelper (Metric m) coord_head coord_tail =
     let
-        new_coord_tail = (knotMove (tailDirMap (coordMinus coord_head coord_tail)) (coordMetric coord_head coord_tail) coord_tail)
+        new_coord_tail =
+            ( knotMove
+                (tailDirMap (coordMinus coord_head coord_tail))
+                (coordMetric coord_head coord_tail)
+                coord_tail
+            )
      in
         knotMoveHelper (coordMetric coord_head new_coord_tail) coord_head new_coord_tail
 
@@ -151,7 +168,7 @@ computeTailDirectionPart2 _ = do
 stateProcPart2 :: [Instruction] -> State TaskStatePart2 Int
 stateProcPart2 [] = do
     stat <- get
-    traceShowM stat
+    -- traceShowM stat
     _count_part2 <$> get
 stateProcPart2 instructions = do
     let move = fst $ head instructions
@@ -203,11 +220,20 @@ stateProc instructions = do
     computeTailDirection $ coordMetric new_coord_head (_coord_tail curr_state)
     stateProc (tail instructions)
 
+oneLinemySequence :: Parser Instruction
+oneLinemySequence = do
+    a <- oneOf "UDLR"
+    b <- char ' '
+    b <- many digitChar
+    many newline
+    return ([a], read b)
+
+fullParser :: Parser [Instruction]
+fullParser = many oneLinemySequence
+
 day9 :: IO ()
 day9 = do
-    inputs <-
-        readFile "./task_9.txt"
-            >>= return . map ((\x -> (head x, read (x !! 1) :: Int)) . splitOn " ") . lines
+    inputs <- fromJust <$> (parseMaybe fullParser <$> (readFile "./task_9.txt"))
     let initialState =
             TaskState
                 { _coord_head = (0, 0)

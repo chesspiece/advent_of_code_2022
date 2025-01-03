@@ -19,7 +19,8 @@ import Data.Void (Void)
 import Text.Megaparsec.Char (newline, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
 
-data Instruction = Noop | Addx Int deriving (Show, Eq, Ord)
+data Instruction = Noop | Addx Int
+    deriving (Show, Eq, Ord)
 type Parser = Parsec Void String
 
 data TaskState = TaskState

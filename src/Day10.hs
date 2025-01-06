@@ -91,11 +91,11 @@ printSprites True n tmr spritePos = do
     jumpLine tmr
     putStr "#"
     --traceIO (show n)
-    printSprites (checkIfVisible (mod tmr 40) spritePos) (n - 1) (tmr - 1) 1
+    printSprites (checkIfVisible (mod tmr 40) spritePos) (n - 1) (tmr + 1) spritePos
 printSprites False n tmr spritePos = do
     jumpLine tmr
     putStr "."
-    printSprites (checkIfVisible (mod tmr 40) spritePos) (n - 1) (tmr + 1) 1
+    printSprites (checkIfVisible (mod tmr 40) spritePos) (n - 1) (tmr + 1) spritePos
 
 
 instructionsProcessing :: [Instruction] -> Int -> Int -> StateT TaskState10 IO Int

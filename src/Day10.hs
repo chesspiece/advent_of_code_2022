@@ -13,12 +13,13 @@ import Text.Megaparsec (
     (<|>),
  )
 
-import Control.Lens (makeLenses, (&), (.~))
-import Control.Monad.State (MonadState (get, put), State, evalState, gets, runState)
+import Control.Lens (makeLenses, (&), (.~), Identity (runIdentity))
+import Control.Monad.State (MonadState (get, put), State, evalState, evalStateT, gets, runState, runStateT, StateT, state)
 import Data.Maybe (fromJust)
 import Data.Void (Void)
 import Text.Megaparsec.Char (newline, string)
 import Text.Megaparsec.Char.Lexer (decimal, signed)
+import Control.Monad.IO.Class (liftIO)
 
 data Instruction = Noop | Addx Int
     deriving (Show, Eq, Ord)
@@ -56,13 +57,14 @@ oneInstructionProcessing (Addx val) = do
     put new_state
     return new_reg_count
 
-instructionsProcessing :: [Instruction] -> Int -> Int -> State TaskState10 Int
+instructionsProcessing :: [Instruction] -> Int -> Int -> StateT TaskState10 IO Int
 instructionsProcessing [] _ accum = return $ accum
 instructionsProcessing (instruction : instrscs) next_timer accum = do
     prev_state <- get
-    oneInstructionProcessing instruction
+    state . runState $ oneInstructionProcessing instruction
     curr_state <- get
     let current_timer = _timerCount curr_state
+    liftIO $ print "Yay"
     if (current_timer + 1) == next_timer
         then
             instructionsProcessing instrscs (next_timer + 40) (accum + next_timer * (_regCount curr_state))
@@ -81,5 +83,5 @@ day10 = do
                 { _timerCount = 0
                 , _regCount = 1
                 }
-    let answer = evalState (instructionsProcessing inputs 20 0) initialStatePart2
+    answer <- evalStateT (instructionsProcessing inputs 20 0) initialStatePart2
     print answer

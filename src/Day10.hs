@@ -33,7 +33,6 @@ import Text.Megaparsec.Char.Lexer (decimal, signed)
 
 data Instruction = Noop | Addx Int
     deriving (Show, Eq, Ord)
-newtype CycleVal = CycleVal (Int, Int)
 type Parser = Parsec Void String
 
 data TaskState = TaskState

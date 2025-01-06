@@ -36,7 +36,7 @@ data Instruction = Noop | Addx Int
 newtype CycleVal = CycleVal (Int, Int)
 type Parser = Parsec Void String
 
-data TaskState = TaskState10
+data TaskState = TaskState
     { _timerCount :: Int
     , _regCount :: Int
     }
@@ -118,7 +118,7 @@ day10 :: IO ()
 day10 = do
     inputs <- fromJust <$> parseMaybe (many oneLineSequence <* eof) <$> (readFile "./task_10.txt")
     let initialStatePart2 =
-            TaskState10
+            TaskState
                 { _timerCount = 0
                 , _regCount = 1
                 }

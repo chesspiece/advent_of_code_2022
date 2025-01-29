@@ -104,14 +104,11 @@ instructionsProcessing (instruction : instrscs) next_timer accum = do
             (prev_timer)
             (spritePos)
     if (current_timer + 1) == next_timer
-        then
-            instructionsProcessing instrscs (next_timer + 40) (accum + next_timer * (_regCount curr_state))
+        then instructionsProcessing instrscs (next_timer + 40) (accum + next_timer * (_regCount curr_state))
         else
             if (current_timer + 1) > next_timer
-                then
-                    instructionsProcessing instrscs (next_timer + 40) (accum + next_timer * (_regCount prev_state))
-                else
-                    instructionsProcessing instrscs next_timer accum
+                then instructionsProcessing instrscs (next_timer + 40) (accum + next_timer * (_regCount prev_state))
+                else instructionsProcessing instrscs next_timer accum
 
 day10 :: IO ()
 day10 = do

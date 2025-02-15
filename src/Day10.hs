@@ -46,7 +46,7 @@ makeLenses ''TaskState
 oneLineSequence :: Parser Instruction
 oneLineSequence =
     (Noop <$ (string "noop" <* many newline)) <|> Addx
-        <$> ((string "addx ") *> (signed (return ()) decimal) <* many newline)
+        <$> (string "addx " *> signed (return ()) decimal <* many newline)
 
 oneInstructionProcessing :: Instruction -> State TaskState Int
 oneInstructionProcessing Noop = do
@@ -89,7 +89,7 @@ printSprites False n tmr spritePos = do
     printSprites (checkIfVisible (mod (tmr + 1) 40) spritePos) (n - 1) (tmr + 1) spritePos
 
 instructionsProcessing :: [Instruction] -> Int -> Int -> StateT TaskState IO Int
-instructionsProcessing [] _ accum = return $ accum
+instructionsProcessing [] _ accum = return accum
 instructionsProcessing (instruction : instrscs) next_timer accum = do
     prev_state <- get
     state . runState $ oneInstructionProcessing instruction
@@ -99,10 +99,10 @@ instructionsProcessing (instruction : instrscs) next_timer accum = do
     let current_timer = _timerCount curr_state
     liftIO $
         printSprites
-            (checkIfVisible (mod (prev_timer) 40) (spritePos))
+            (checkIfVisible (mod prev_timer 40) spritePos)
             (current_timer - prev_timer)
-            (prev_timer)
-            (spritePos)
+            prev_timer
+            spritePos
     if (current_timer + 1) == next_timer
         then instructionsProcessing instrscs (next_timer + 40) (accum + next_timer * (_regCount curr_state))
         else
@@ -112,7 +112,7 @@ instructionsProcessing (instruction : instrscs) next_timer accum = do
 
 day10 :: IO ()
 day10 = do
-    inputs <- fromJust <$> parseMaybe (many oneLineSequence <* eof) <$> (readFile "./task_10.txt")
+    inputs <- fromJust . parseMaybe (many oneLineSequence <* eof) <$> readFile "./task_10.txt"
     let initialStatePart2 =
             TaskState
                 { _timerCount = 0

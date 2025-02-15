@@ -113,17 +113,16 @@ knotMoveHelper (Metric 1) coord_head coord_tail = coord_tail
 knotMoveHelper (Metric m) coord_head coord_tail =
     let
         new_coord_tail =
-            ( knotMove
+            knotMove
                 (tailDirMap (coordMinus coord_head coord_tail))
                 (coordMetric coord_head coord_tail)
                 coord_tail
-            )
      in
         knotMoveHelper (coordMetric coord_head new_coord_tail) coord_head new_coord_tail
 
 processKnots :: [Coordinate] -> [Coordinate] -> ([Coordinate], Coordinate)
-processKnots (x : []) [] = ([x], x)
-processKnots (x : []) coord_list =
+processKnots [x] [] = ([x], x)
+processKnots [x] coord_list =
     let
         x2 = knotMoveHelper (coordMetric (head coord_list) x) (head coord_list) x
         coord_list2 = x2 : coord_list
@@ -169,7 +168,7 @@ stateProcPart2 instructions = do
     curr_state <- get
 
     let new_coord_head = newCoordHead move count_move (head $ _coord_head_part2 curr_state)
-    let (curr_all_knots, curr_last_knot_coord) = processKnots (new_coord_head : (tail $ _coord_head_part2 curr_state)) []
+    let (curr_all_knots, curr_last_knot_coord) = processKnots (new_coord_head : tail (_coord_head_part2 curr_state)) []
     let new_state =
             curr_state & (coord_head_part2 .~ curr_all_knots) & (last_knot_coord_part2 .~ curr_last_knot_coord)
     put new_state
@@ -219,14 +218,14 @@ oneLinemySequence = do
     b <- char ' '
     b <- many digitChar
     many newline
-    return $ take (read b) (repeat ([a], 1))
+    return $ replicate (read b) ([a], 1)
 
 fullParser :: Parser [Instruction]
 fullParser = fmap concat $ many oneLinemySequence
 
 day9 :: IO ()
 day9 = do
-    inputs <- fromJust <$> (parseMaybe fullParser <$> (readFile "./task_9.txt"))
+    inputs <- fromJust <$> (parseMaybe fullParser <$> readFile "./task_9.txt")
     let initialState =
             TaskState
                 { _coord_head = (0, 0)

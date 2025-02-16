@@ -8,9 +8,12 @@ module Day11 (day11) where
 import Control.Applicative (many, (*>), (<*))
 import Control.Monad.Trans (lift)
 import Text.Megaparsec (
+    MonadParsec,
     Parsec,
     ParsecT,
+    Stream (Tokens),
     eof,
+    getInput,
     option,
     optional,
     parseMaybe,
@@ -47,8 +50,7 @@ import Text.Megaparsec.Char (newline, string)
 import Text.Megaparsec.Char.Lexer as L
 
 type HashTable k v = H.BasicHashTable k v
-type Parser = ParsecT Void String (StateT (HashTable Integer [Integer]) IO)
-type ParserInner = Parsec Void String
+type Parser = Parsec Void String
 
 data TaskState = TaskState
     { _timerCount :: Integer
@@ -56,17 +58,15 @@ data TaskState = TaskState
     }
     deriving (Show)
 
-monkeyParse :: Parser [Integer]
+monkeyParse :: Parser (Integer, [Integer])
 monkeyParse =
     do
-        ht <- get
         string "Monkey "
         monkey_index <- L.decimal
         string ":"
         newline
-        itms <- itemsParse
-        lift . lift $ H.insert ht monkey_index itms
-        lift . lift $ fromJust <$> H.lookup ht monkey_index
+        items <- itemsParse
+        return (monkey_index, items)
 
 itemsParse :: Parser [Integer]
 itemsParse =
@@ -79,9 +79,9 @@ str = "Monkey 101:\nStarting items: 1, 2, 3, 4\n"
 
 day11 :: IO ()
 day11 = do
-    new_hashtable <- H.new
-    tst <- runStateT (runParserT monkeyParse "" str) new_hashtable --
+    -- new_hashtable <- H.new
+    let tst = parseMaybe monkeyParse str
     case tst of
-        (Left err, s) -> print "Error: parsing of input has failed"
-        (Right xs, s) -> print xs
+        Nothing -> print "Error: parsing of input has failed"
+        Just xs -> print xs
     print "yay"

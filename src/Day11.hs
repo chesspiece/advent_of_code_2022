@@ -40,8 +40,6 @@ import Control.Monad.State (
     state,
  )
 
--- (decimal, signed)
-
 import Control.Arrow (Arrow (second))
 import qualified Data.HashTable.IO as H
 import Data.Maybe (fromJust, fromMaybe)

@@ -8,23 +8,23 @@ import Day7 (day7)
 import Day8 (day8)
 import Day9 (day9)
 import Day10 (day10)
-
-
+import Day11 (day11)
 
 chooseDay :: Int -> IO ()
 chooseDay day_num = case day_num of
-  1 -> day1
-  2 -> day2
-  3 -> day3
-  4 -> day4
-  5 -> day5
-  6 -> day6
-  7 -> day7
-  8 -> day8
-  9 -> day9
-  10 -> day10
-  _ -> putStrLn "Day with this number is unimplemented"
+    1 -> day1
+    2 -> day2
+    3 -> day3
+    4 -> day4
+    5 -> day5
+    6 -> day6
+    7 -> day7
+    8 -> day8
+    9 -> day9
+    10 -> day10
+    11 -> day11
+    _ -> putStrLn "Day with this number is unimplemented"
 
 main :: IO ()
 main = do
-  putStrLn "Input day number to solve: " >> getLine >>= chooseDay . read
+    putStrLn "Input day number to solve: " >> getLine >>= chooseDay . read

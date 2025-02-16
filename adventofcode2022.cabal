@@ -71,6 +71,7 @@ library
         , text
         , vector
         , hashmap
+        , hashtables
 
     default-language: Haskell2010
 

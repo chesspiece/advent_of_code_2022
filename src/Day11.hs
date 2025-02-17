@@ -1,3 +1,5 @@
+-- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
+-- inside of ParsecT parser.
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 

@@ -93,12 +93,14 @@ str = "Monkey 101:\nStarting items: 1, 2, 3, 4\nMonkey 102:\nStarting items: 5, 
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
-    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" str) new_hashtable --
+    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" str) new_hashtable
     case tst of
         (Left err, s) -> print "Error: parsing of input has failed"
         (Right xs, s) -> do
             print s
             res1 <- H.lookup s 102
+            print res1
+            res1 <- H.lookup s 101
             print res1
             print xs
     print "yay"

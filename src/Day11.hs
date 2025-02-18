@@ -25,6 +25,7 @@ import Text.Megaparsec (
     runParserT',
     setParserState,
     try,
+    skipMany,
     (<|>),
  )
 
@@ -57,10 +58,10 @@ import Text.Megaparsec.Char.Lexer as L
 type HashTable k v = H.BasicHashTable k v
 type Parser = ParsecT Void String (StateT (HashTable Integer [Integer]) IO)
 type ParserInner = Parsec Void String
+ 
 
-monkeyParse :: Parser [Integer]
-monkeyParse =
-    do
+monkeyParse :: Parser (HashTable Integer [Integer])
+monkeyParse = do
         ht <- get
         string "Monkey "
         monkey_index <- L.decimal
@@ -76,7 +77,9 @@ monkeyParse =
             (state, Right lst) -> do
                 setParserState state
                 lift . lift $ H.insert ht monkey_index lst
-                lift . lift $ fromJust <$> H.lookup ht monkey_index
+                put ht
+                --lift . lift $ fromJust <$> H.lookup ht monkey_index
+                return ht
 
 itemsParse :: ParserInner [Integer]
 itemsParse =
@@ -85,13 +88,17 @@ itemsParse =
         many (L.decimal <* (string ", " <|> many newline))
 
 str :: String
-str = "Monkey 101:\nStarting items: 1, 2, 3, 4\nMonkey 101:\nStarting items: 5, 6, 7, 8\n"
+str = "Monkey 101:\nStarting items: 1, 2, 3, 4\nMonkey 102:\nStarting items: 5, 6, 7, 8\n"
 
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
-    tst <- runStateT (runParserT (many monkeyParse) "" str) new_hashtable --
+    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" str) new_hashtable --
     case tst of
         (Left err, s) -> print "Error: parsing of input has failed"
-        (Right xs, s) -> print xs
+        (Right xs, s) -> do
+            print s
+            res1 <- H.lookup s 102
+            print res1
+            print xs
     print "yay"

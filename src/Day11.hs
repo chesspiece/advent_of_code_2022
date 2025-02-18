@@ -73,7 +73,7 @@ monkeyParse = do
         -- lift . lift $ fromJust <$> H.lookup ht monkey_index
         let tpl = runParser' itemsParse state
         case tpl of
-            (_, Left err) -> error "Error while parsing"
+            (_, Left err) -> error "Parse error!"
             (state, Right lst) -> do
                 setParserState state
                 lift . lift $ H.insert ht monkey_index lst

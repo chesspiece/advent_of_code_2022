@@ -60,7 +60,7 @@ type Parser = ParsecT Void String (StateT (HashTable Integer [Integer]) IO)
 type ParserInner = Parsec Void String
  
 
-monkeyParse :: Parser (HashTable Integer [Integer])
+monkeyParse :: Parser ()
 monkeyParse = do
         ht <- get
         string "Monkey "
@@ -79,7 +79,7 @@ monkeyParse = do
                 lift . lift $ H.insert ht monkey_index lst
                 put ht
                 --lift . lift $ fromJust <$> H.lookup ht monkey_index
-                return ht
+                return ()
 
 itemsParse :: ParserInner [Integer]
 itemsParse =

@@ -68,9 +68,6 @@ monkeyParse = do
         string ":"
         newline
         state <- getParserState
-        -- lst <- itemsParse
-        -- lift . lift $ H.insert ht monkey_index lst
-        -- lift . lift $ fromJust <$> H.lookup ht monkey_index
         let tpl = runParser' itemsParse state
         case tpl of
             (_, Left err) -> error "Parse error!"
@@ -78,7 +75,6 @@ monkeyParse = do
                 setParserState state
                 lift . lift $ H.insert ht monkey_index lst
                 put ht
-                --lift . lift $ fromJust <$> H.lookup ht monkey_index
                 return ()
 
 itemsParse :: ParserInner [Integer]

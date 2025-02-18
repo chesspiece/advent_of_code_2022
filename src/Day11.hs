@@ -76,22 +76,31 @@ monkeyParse = do
             setParserState state
             lift . lift $ H.insert ht monkey_index lst
             put ht
-            return ()
+    state <- getParserState
+    let tpl = runParser' operationParse state
+    case tpl of
+        (_, Left err) -> error "Parse error! 2"
+        (state, Right lst) -> do
+            setParserState state
+    return ()
 
 itemsParse :: ParserInner [Int]
 itemsParse =
     do
         string "Starting items: "
-        many (L.decimal <* (string ", " <|> many newline))
+        many (L.decimal <* (string ", " <|> string "\n"))
 
 operationParse :: ParserInner Operation
 operationParse =
     do
         string "Operation: new = old "
-        Mult <$> (string "+" *> many CH.printChar) <|> Mult <$> (string "*" *> many CH.printChar)
+        ret <- Add <$> (string "+ " *> many CH.printChar) <|> Mult <$> (string "* " *> many CH.printChar)
+        newline
+        return ret
 
 str :: String
-str = "Monkey 101:\nStarting items: 1, 2, 3, 4\nMonkey 102:\nStarting items: 5, 6, 7, 8\n"
+str =
+    "Monkey 101:\nStarting items: 1, 2, 3, 4\nOperation: new = old + 2\nMonkey 102:\nStarting items: 5, 6, 7, 8\nOperation: new = old * old\n"
 
 day11 :: IO ()
 day11 = do

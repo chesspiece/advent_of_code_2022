@@ -24,12 +24,10 @@ import Text.Megaparsec (
     runParserT,
     runParserT',
     setParserState,
-    try,
     skipMany,
+    try,
     (<|>),
  )
-
-import Control.Monad.ST (ST)
 
 import Control.Lens (Identity (runIdentity), makeLenses, (&), (.~))
 import Control.Monad (liftM)
@@ -53,35 +51,44 @@ import qualified Data.HashTable.IO as H
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Void (Void)
 import Text.Megaparsec.Char (newline, string)
+import qualified Text.Megaparsec.Char as CH
 import Text.Megaparsec.Char.Lexer as L
 
+data Operation = Mult String | Add String
+    deriving (Show, Eq, Ord)
+
 type HashTable k v = H.BasicHashTable k v
-type Parser = ParsecT Void String (StateT (HashTable Integer [Integer]) IO)
+type Parser = ParsecT Void String (StateT (HashTable Int [Int]) IO)
 type ParserInner = Parsec Void String
- 
 
 monkeyParse :: Parser ()
 monkeyParse = do
-        ht <- get
-        string "Monkey "
-        monkey_index <- L.decimal
-        string ":"
-        newline
-        state <- getParserState
-        let tpl = runParser' itemsParse state
-        case tpl of
-            (_, Left err) -> error "Parse error!"
-            (state, Right lst) -> do
-                setParserState state
-                lift . lift $ H.insert ht monkey_index lst
-                put ht
-                return ()
+    ht <- get
+    string "Monkey "
+    monkey_index <- L.decimal
+    string ":"
+    newline
+    state <- getParserState
+    let tpl = runParser' itemsParse state
+    case tpl of
+        (_, Left err) -> error "Parse error!"
+        (state, Right lst) -> do
+            setParserState state
+            lift . lift $ H.insert ht monkey_index lst
+            put ht
+            return ()
 
-itemsParse :: ParserInner [Integer]
+itemsParse :: ParserInner [Int]
 itemsParse =
     do
         string "Starting items: "
         many (L.decimal <* (string ", " <|> many newline))
+
+operationParse :: ParserInner Operation
+operationParse =
+    do
+        string "Operation: new = old "
+        Mult <$> (string "+" *> many CH.printChar) <|> Mult <$> (string "*" *> many CH.printChar)
 
 str :: String
 str = "Monkey 101:\nStarting items: 1, 2, 3, 4\nMonkey 102:\nStarting items: 5, 6, 7, 8\n"

@@ -1,10 +1,11 @@
+{-# HLINT ignore "Use <&>" #-}
+{-# HLINT ignore "Use gets" #-}
+{-# LANGUAGE GADTs #-}
 -- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
 -- inside of ParsecT parser.
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Use <&>" #-}
-{-# HLINT ignore "Use gets" #-}
 module Day11 (day11) where
 
 import Control.Applicative (many, (*>), (<*))
@@ -44,17 +45,19 @@ import Control.Monad.State (
     state,
  )
 
--- (decimal, signed)
-
 import Control.Arrow (Arrow (second))
 import qualified Data.HashTable.IO as H
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Void (Void)
 import Text.Megaparsec.Char (newline, string)
 import qualified Text.Megaparsec.Char as CH
-import Text.Megaparsec.Char.Lexer as L
+import Text.Megaparsec.Char.Lexer as L (decimal)
 
-data Operation = Mult String | Add String
+data Operation where
+    Mult :: Int -> Operation
+    Add :: Int -> Operation
+    AddOld :: Operation
+    MultOld :: Operation
     deriving (Show, Eq, Ord)
 
 type HashTable k v = H.BasicHashTable k v
@@ -94,7 +97,11 @@ operationParse :: ParserInner Operation
 operationParse =
     do
         string "Operation: new = old "
-        ret <- Add <$> (string "+ " *> many CH.printChar) <|> Mult <$> (string "* " *> many CH.printChar)
+        ret <-
+            Add <$> try (string "+ " *> decimal) <|>
+            Mult <$> try (string "* " *> decimal) <|>
+            AddOld <$ try (string "+ old") <|>
+            MultOld <$ (string "* old")
         newline
         return ret
 

@@ -86,8 +86,8 @@ monkeyParse = do
         (_, Right lst) -> do
             lift . lift $ H.insert ht monkey_index lst
             put ht
+    
     let (state, _) = tpl
-
     let tpl = runParser' operationParse state
     case tpl of
         (_, Left err) -> error "Parse error! 2"

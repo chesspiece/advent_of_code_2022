@@ -11,7 +11,7 @@ module Day11 (day11) where
 import Control.Applicative (many, (*>), (<*))
 import Control.Monad.Trans (lift)
 import Text.Megaparsec (
-    MonadParsec (getParserState),
+    MonadParsec (getParserState, takeP),
     Parsec,
     ParsecT,
     Stream (Tokens),
@@ -65,6 +65,12 @@ type HashTable k v = H.BasicHashTable k v
 type Parser = ParsecT Void String (StateT (HashTable Int [Int]) IO)
 type ParserInner = Parsec Void String
 
+data TaskState = TaskState
+    { _timerCount :: Int
+    , _regCount :: Int
+    }
+    deriving (Show)
+
 monkeyParse :: Parser ()
 monkeyParse = do
     ht <- get
@@ -73,6 +79,7 @@ monkeyParse = do
     string ":"
     newline
     state <- getParserState
+
     let tpl = runParser' itemsParse state
     case tpl of
         (_, Left err) -> error "Parse error!"
@@ -80,10 +87,19 @@ monkeyParse = do
             lift . lift $ H.insert ht monkey_index lst
             put ht
     let (state, _) = tpl
+
     let tpl = runParser' operationParse state
     case tpl of
         (_, Left err) -> error "Parse error! 2"
         (state, Right lst) -> do
+            lift . lift $ print lst
+
+    let (state, _) = tpl
+    let tpl = runParser' divisibleParse state
+    case tpl of
+        (_, Left err) -> error "Parse error! 3"
+        (state, Right lst) -> do
+            lift . lift $ print lst
             setParserState state
     many newline
     return ()
@@ -110,14 +126,24 @@ operationParse =
         newline
         return ret
 
-divisibleParse :: ParserInner Int
+divisibleParse :: ParserInner (Int, Int, Int)
 divisibleParse =
     do
         takeP Nothing 21
         --string "  Test: divisible by "
         ret <- L.decimal
         newline
-        return ret
+
+        --string "    If true: throw to monkey "
+        takeP Nothing 29
+        true_val <- L.decimal
+        newline 
+
+        --string "    If false: throw to monkey "
+        takeP Nothing 30
+        false_val <- L.decimal
+        newline
+        return (ret, true_val, false_val)
 
 day11 :: IO ()
 day11 = do
@@ -128,7 +154,7 @@ day11 = do
         (Left err, s) -> print "Error: parsing of input has failed"
         (Right xs, s) -> do
             print s
-            res1 <- H.lookup s 102
+            res1 <- H.lookup s 0
             print res1
             res1 <- H.lookup s 1
             print res1

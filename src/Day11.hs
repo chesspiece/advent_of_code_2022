@@ -27,6 +27,7 @@ import Text.Megaparsec (
     setParserState,
     skipMany,
     try,
+    optional,
     (<|>),
  )
 
@@ -91,14 +92,16 @@ itemsParse :: ParserInner [Int]
 itemsParse =
     do
         takeP Nothing 18
-        --string "Starting items: "
-        many (L.decimal <* (string ", " <|> string "\n"))
+        --string "  Starting items: "
+        ret <- many (L.decimal <* optional (string ", "))
+        newline
+        return ret
 
 operationParse :: ParserInner Operation
 operationParse =
     do
         takeP Nothing 23
-        --string "Operation: new = old "
+        --string "  Operation: new = old "
         ret <-
             Add <$> try (string "+ " *> decimal) <|>
             Mult <$> try (string "* " *> decimal) <|>
@@ -110,7 +113,8 @@ operationParse =
 divisibleParse :: ParserInner Int
 divisibleParse =
     do
-        string "Test: divisible by "
+        takeP Nothing 21
+        --string "  Test: divisible by "
         ret <- L.decimal
         newline
         return ret

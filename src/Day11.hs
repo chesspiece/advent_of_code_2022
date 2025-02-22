@@ -84,6 +84,7 @@ monkeyParse = do
         (_, Left err) -> error "Parse error! 2"
         (state, Right lst) -> do
             setParserState state
+    many newline
     return ()
 
 itemsParse :: ParserInner [Int]
@@ -104,21 +105,26 @@ operationParse =
         newline
         return ret
 
-str :: String
-str =
-    "Monkey 101:\nStarting items: 1, 2, 3, 4\nOperation: new = old + 2\nMonkey 102:\nStarting items: 5, 6, 7, 8\nOperation: new = old * old\n"
+divisibleParse :: ParserInner Int
+divisibleParse =
+    do
+        string "Test: divisible by "
+        ret <- L.decimal
+        newline
+        return ret
 
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
-    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" str) new_hashtable
+    txt <- (readFile "task_11.txt")
+    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) new_hashtable
     case tst of
         (Left err, s) -> print "Error: parsing of input has failed"
         (Right xs, s) -> do
             print s
             res1 <- H.lookup s 102
             print res1
-            res1 <- H.lookup s 101
+            res1 <- H.lookup s 1
             print res1
             print xs
     print "yay"

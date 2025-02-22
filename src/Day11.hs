@@ -90,13 +90,15 @@ monkeyParse = do
 itemsParse :: ParserInner [Int]
 itemsParse =
     do
-        string "Starting items: "
+        takeP Nothing 18
+        --string "Starting items: "
         many (L.decimal <* (string ", " <|> string "\n"))
 
 operationParse :: ParserInner Operation
 operationParse =
     do
-        string "Operation: new = old "
+        takeP Nothing 23
+        --string "Operation: new = old "
         ret <-
             Add <$> try (string "+ " *> decimal) <|>
             Mult <$> try (string "* " *> decimal) <|>

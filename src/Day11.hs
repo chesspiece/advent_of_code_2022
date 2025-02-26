@@ -27,7 +27,6 @@ import Text.Megaparsec (
     setParserState,
     skipMany,
     try,
-    optional,
     (<|>),
  )
 
@@ -47,6 +46,7 @@ import Control.Monad.State (
  )
 
 import Control.Arrow (Arrow (second))
+import Data.Either (fromRight)
 import qualified Data.HashTable.IO as H
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Void (Void)
@@ -62,14 +62,18 @@ data Operation where
     deriving (Show, Eq, Ord)
 
 type HashTable k v = H.BasicHashTable k v
-type Parser = ParsecT Void String (StateT (HashTable Int [Int]) IO)
+type Parser = ParsecT Void String (StateT (HashTable Int TaskState) IO)
 type ParserInner = Parsec Void String
 
 data TaskState = TaskState
-    { _timerCount :: Int
-    , _regCount :: Int
+    { _items :: [Int]
+    , _divisibilityCheck :: Int
+    , _opertion :: Operation
+    , _monkeyChoice :: (Int, Int)
     }
     deriving (Show)
+
+makeLenses ''TaskState
 
 monkeyParse :: Parser ()
 monkeyParse = do
@@ -80,35 +84,43 @@ monkeyParse = do
     newline
     state <- getParserState
 
-    let tpl = runParser' itemsParse state
-    case tpl of
+    let tuple_listItems = runParser' itemsParse state
+    case tuple_listItems of
         (_, Left err) -> error "Parse error!"
-        (_, Right lst) -> do
-            lift . lift $ H.insert ht monkey_index lst
-            put ht
-    
-    let (state, _) = tpl
-    let tpl = runParser' operationParse state
-    case tpl of
-        (_, Left err) -> error "Parse error! 2"
-        (state, Right lst) -> do
-            lift . lift $ print lst
+        (_, Right monkeyList) -> do
+            return ()
+    let (state, Right list_items) = tuple_listItems
 
-    let (state, _) = tpl
-    let tpl = runParser' divisibleParse state
-    case tpl of
+    let tuple_operation = runParser' operationParse state
+    case tuple_operation of
+        (_, Left err) -> error "Parse error! 2"
+        (state, Right opr) -> do
+            return ()
+    let (state, Right opr) = tuple_operation
+
+    let tuple_check = runParser' divisibleParse state
+    case tuple_check of
         (_, Left err) -> error "Parse error! 3"
-        (state, Right lst) -> do
-            lift . lift $ print lst
+        (state, Right (divis, monkey1, monkey2)) -> do
             setParserState state
+    let (state, Right (divis, monkey1, monkey2)) = tuple_check
+
     many newline
+    let parsed_state =
+            TaskState
+                { _items = list_items
+                , _divisibilityCheck = divis
+                , _opertion = opr
+                , _monkeyChoice = (monkey1, monkey2)
+                }
+    lift . lift $ H.insert ht monkey_index parsed_state
     return ()
 
 itemsParse :: ParserInner [Int]
 itemsParse =
     do
         takeP Nothing 18
-        --string "  Starting items: "
+        -- string "  Starting items: "
         ret <- many (L.decimal <* optional (string ", "))
         newline
         return ret
@@ -117,12 +129,16 @@ operationParse :: ParserInner Operation
 operationParse =
     do
         takeP Nothing 23
-        --string "  Operation: new = old "
+        -- string "  Operation: new = old "
         ret <-
-            Add <$> try (string "+ " *> decimal) <|>
-            Mult <$> try (string "* " *> decimal) <|>
-            AddOld <$ try (string "+ old") <|>
-            MultOld <$ (string "* old")
+            Add
+                <$> try (string "+ " *> decimal)
+                    <|> Mult
+                <$> try (string "* " *> decimal)
+                    <|> AddOld
+                <$ try (string "+ old")
+                    <|> MultOld
+                <$ (string "* old")
         newline
         return ret
 
@@ -130,16 +146,16 @@ divisibleParse :: ParserInner (Int, Int, Int)
 divisibleParse =
     do
         takeP Nothing 21
-        --string "  Test: divisible by "
+        -- string "  Test: divisible by "
         ret <- L.decimal
         newline
 
-        --string "    If true: throw to monkey "
+        -- string "    If true: throw to monkey "
         takeP Nothing 29
         true_val <- L.decimal
-        newline 
+        newline
 
-        --string "    If false: throw to monkey "
+        -- string "    If false: throw to monkey "
         takeP Nothing 30
         false_val <- L.decimal
         newline
@@ -158,5 +174,10 @@ day11 = do
             print res1
             res1 <- H.lookup s 1
             print res1
-            print xs
+            res1 <- H.lookup s 7
+            print res1
+            res1 <- H.lookup s 6
+            print res1
+            res1 <- H.lookup s 8
+            print res1
     print "yay"

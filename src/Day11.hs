@@ -62,7 +62,7 @@ data Operation where
     deriving (Show, Eq, Ord)
 
 type HashTable k v = H.BasicHashTable k v
-type Parser = ParsecT Void String (StateT (HashTable Int TaskState) IO)
+type Parser = ParsecT Void String (StateT (HashTable Int TaskState, Int) IO)
 type ParserInner = Parsec Void String
 
 data TaskState = TaskState
@@ -77,7 +77,7 @@ makeLenses ''TaskState
 
 monkeyParse :: Parser ()
 monkeyParse = do
-    ht <- get
+    (ht, cnt) <- get
     string "Monkey "
     monkey_index <- L.decimal
     string ":"
@@ -114,6 +114,7 @@ monkeyParse = do
                 , _monkeyChoice = (monkey1, monkey2)
                 }
     lift . lift $ H.insert ht monkey_index parsed_state
+    put (ht, cnt + 1)
     return ()
 
 itemsParse :: ParserInner [Int]
@@ -165,19 +166,19 @@ day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
     txt <- (readFile "task_11.txt")
-    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) new_hashtable
+    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) (new_hashtable, -1)
     case tst of
         (Left err, s) -> print "Error: parsing of input has failed"
-        (Right xs, s) -> do
+        (Right xs, (s, max_monkey)) -> do
             print s
             res1 <- H.lookup s 0
             print res1
             res1 <- H.lookup s 1
             print res1
-            res1 <- H.lookup s 7
+            res1 <- H.lookup s max_monkey
             print res1
             res1 <- H.lookup s 6
             print res1
-            res1 <- H.lookup s 8
+            res1 <- H.lookup s (max_monkey + 1)
             print res1
     print "yay"

@@ -139,7 +139,7 @@ operationParse =
                     <|> AddOld
                 <$ try (string "+ old")
                     <|> MultOld
-                <$ (string "* old")
+                <$ string "* old"
         newline
         return ret
 
@@ -165,7 +165,7 @@ divisibleParse =
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
-    txt <- (readFile "task_11.txt")
+    txt <- readFile "task_11.txt"
     tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) (new_hashtable, -1)
     case tst of
         (Left err, s) -> print "Error: parsing of input has failed"

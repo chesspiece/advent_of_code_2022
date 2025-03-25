@@ -62,10 +62,10 @@ data Operation where
     deriving (Show, Eq, Ord)
 
 type HashTable k v = H.BasicHashTable k v
-type Parser = ParsecT Void String (StateT (HashTable Int TaskState, Int) IO)
+type Parser = ParsecT Void String (StateT (HashTable Int MonkeyState, Int) IO)
 type ParserInner = Parsec Void String
 
-data TaskState = TaskState
+data MonkeyState = MonkeyState
     { _items :: [Int]
     , _divisibilityCheck :: Int
     , _opertion :: Operation
@@ -73,7 +73,7 @@ data TaskState = TaskState
     }
     deriving (Show)
 
-makeLenses ''TaskState
+makeLenses ''MonkeyState
 
 monkeyParse :: Parser ()
 monkeyParse = do
@@ -107,7 +107,7 @@ monkeyParse = do
 
     many newline
     let parsed_state =
-            TaskState
+            MonkeyState
                 { _items = list_items
                 , _divisibilityCheck = divis
                 , _opertion = opr
@@ -161,6 +161,22 @@ divisibleParse =
         false_val <- L.decimal
         newline
         return (ret, true_val, false_val)
+
+applyMonkeyOperation :: Operation -> Int -> Int
+applyMonkeyOperation (Mult mltp) worry = mltp * worry
+applyMonkeyOperation (Add add) worry = add + worry
+applyMonkeyOperation (MultOld) worry = worry * worry
+applyMonkeyOperation (AddOld) worry = worry + worry
+
+monkeyAction :: HashTable Int MonkeyState -> Int -> IO (HashTable Int MonkeyState)
+monkeyAction monkeyTable idx = do
+    res1 <- fromJust <$> H.lookup monkeyTable idx
+    let newWorry = applyMonkeyOperation (_opertion res1) (head . _items $ res1)
+    if ((_items $ res1) == [])
+        then
+            return $ monkeyTable
+        else
+            monkeyAction monkeyTable idx
 
 day11 :: IO ()
 day11 = do

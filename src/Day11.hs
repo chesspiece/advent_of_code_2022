@@ -168,15 +168,12 @@ applyMonkeyOperation (Add add) worry = add + worry
 applyMonkeyOperation (MultOld) worry = worry * worry
 applyMonkeyOperation (AddOld) worry = worry + worry
 
-monkeyAction :: HashTable Int MonkeyState -> Int -> IO (HashTable Int MonkeyState)
-monkeyAction monkeyTable idx = do
+monkeyAction :: HashTable Int MonkeyState -> [Int] -> Int -> IO (HashTable Int MonkeyState)
+monkeyAction monkeyTable [] _ = return $ monkeyTable 
+monkeyAction monkeyTable worryList idx = do
     res1 <- fromJust <$> H.lookup monkeyTable idx
     let newWorry = applyMonkeyOperation (_opertion res1) (head . _items $ res1)
-    if ((_items $ res1) == [])
-        then
-            return $ monkeyTable
-        else
-            monkeyAction monkeyTable idx
+    monkeyAction monkeyTable (tail worryList) idx
 
 day11 :: IO ()
 day11 = do

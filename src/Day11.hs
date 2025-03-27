@@ -165,14 +165,15 @@ divisibleParse =
 applyMonkeyOperation :: Operation -> Int -> Int
 applyMonkeyOperation (Mult mltp) worry = mltp * worry
 applyMonkeyOperation (Add add) worry = add + worry
-applyMonkeyOperation (MultOld) worry = worry * worry
-applyMonkeyOperation (AddOld) worry = worry + worry
+applyMonkeyOperation MultOld worry = worry * worry
+applyMonkeyOperation AddOld worry = worry + worry
 
 monkeyAction :: HashTable Int MonkeyState -> [Int] -> Int -> IO (HashTable Int MonkeyState)
-monkeyAction monkeyTable [] _ = return $ monkeyTable 
+monkeyAction monkeyTable [] _ = return monkeyTable 
 monkeyAction monkeyTable worryList idx = do
-    res1 <- fromJust <$> H.lookup monkeyTable idx
-    let newWorry = applyMonkeyOperation (_opertion res1) (head . _items $ res1)
+    monkeyState <- fromJust <$> H.lookup monkeyTable idx
+    let newWorry = applyMonkeyOperation (_opertion monkeyState) (head . _items $ monkeyState)
+    let newMonkeyState = applyMonkeyOperation (_opertion monkeyState) (head . _items $ monkeyState)
     monkeyAction monkeyTable (tail worryList) idx
 
 day11 :: IO ()

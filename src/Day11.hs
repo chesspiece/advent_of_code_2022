@@ -46,10 +46,12 @@ import Control.Monad.State (
  )
 
 import Control.Arrow (Arrow (second))
+import Data.Bits (Bits (xor))
 import Data.Either (fromRight)
 import qualified Data.HashTable.IO as H
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Void (Void)
+import GHC.RTS.Flags (DebugFlags (block_alloc))
 import Text.Megaparsec.Char (newline, string)
 import qualified Text.Megaparsec.Char as CH
 import Text.Megaparsec.Char.Lexer as L (decimal)
@@ -70,6 +72,7 @@ data MonkeyState = MonkeyState
     , _divisibilityCheck :: Int
     , _opertion :: Operation
     , _monkeyChoice :: (Int, Int)
+    , _inspectsQuantity :: Int
     }
     deriving (Show)
 
@@ -112,6 +115,7 @@ monkeyParse = do
                 , _divisibilityCheck = divis
                 , _opertion = opr
                 , _monkeyChoice = (monkey1, monkey2)
+                , _inspectsQuantity = 0
                 }
     lift . lift $ H.insert ht monkey_index parsed_state
     put (ht, cnt + 1)
@@ -159,7 +163,7 @@ divisibleParse =
         -- string "    If false: throw to monkey "
         takeP Nothing 30
         false_val <- L.decimal
-        newline
+        many newline
         return (ret, true_val, false_val)
 
 applyMonkeyOperation :: Operation -> Int -> Int
@@ -168,13 +172,56 @@ applyMonkeyOperation (Add add) worry = add + worry
 applyMonkeyOperation MultOld worry = worry * worry
 applyMonkeyOperation AddOld worry = worry + worry
 
-monkeyAction :: HashTable Int MonkeyState -> [Int] -> Int -> IO (HashTable Int MonkeyState)
-monkeyAction monkeyTable [] _ = return monkeyTable 
-monkeyAction monkeyTable worryList idx = do
-    monkeyState <- fromJust <$> H.lookup monkeyTable idx
-    let newWorry = applyMonkeyOperation (_opertion monkeyState) (head . _items $ monkeyState)
-    let newMonkeyState = applyMonkeyOperation (_opertion monkeyState) (head . _items $ monkeyState)
-    monkeyAction monkeyTable (tail worryList) idx
+isDivisible :: Int -> Int -> Bool
+isDivisible num denum
+    | mod num denum == 0 = True
+    | otherwise = False
+
+chooseMonkey :: (Int, Int) -> Bool -> Int
+chooseMonkey (x, y) flag
+    | flag = x
+    | not flag = y
+
+monkeyAction :: Int -> [Int] -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+monkeyAction currMonkeyIdx [] monkeyTable = return monkeyTable
+monkeyAction currMonkeyIdx worryList monkeyTable = do
+    currentMonkeyState <- fromJust <$> H.lookup monkeyTable currMonkeyIdx
+    H.insert monkeyTable currMonkeyIdx (currentMonkeyState & items .~ tail worryList)
+
+    let newWorry = div (applyMonkeyOperation (_opertion currentMonkeyState) (head worryList)) 3
+    let checkDone = isDivisible newWorry (_divisibilityCheck currentMonkeyState)
+    let newMonkeyIdx = chooseMonkey (_monkeyChoice currentMonkeyState) checkDone
+
+    nextMonkey <- fromJust <$> H.lookup monkeyTable newMonkeyIdx
+
+    let newMonkeyItems = _items nextMonkey
+    let newMonkeyState = nextMonkey & (items .~ (newMonkeyItems ++ [newWorry]))
+
+    H.insert monkeyTable newMonkeyIdx newMonkeyState
+
+    currentMonkeyState <- fromJust <$> H.lookup monkeyTable currMonkeyIdx
+
+    monkeyAction currMonkeyIdx (_items currentMonkeyState) monkeyTable
+
+
+runManyRounds :: Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+runManyRounds 0 _ s = return s
+runManyRounds roundsQuant quant s = do
+    hashTable <- runRound quant s
+    runManyRounds (roundsQuant - 1) quant hashTable
+
+
+runRound :: Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+runRound quant s = _runRound quant 0 s
+  where
+    _runRound :: Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+    _runRound 0 idx s = do
+        currMonkey <- fromJust <$> H.lookup s idx
+        monkeyAction idx (_items currMonkey) s
+    _runRound quant idx s = do
+        currMonkey <- fromJust <$> H.lookup s idx
+        newHash <- monkeyAction idx (_items currMonkey) s
+        _runRound (quant - 1) (idx + 1) newHash
 
 day11 :: IO ()
 day11 = do
@@ -182,17 +229,25 @@ day11 = do
     txt <- readFile "task_11.txt"
     tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) (new_hashtable, -1)
     case tst of
-        (Left err, s) -> print "Error: parsing of input has failed"
+        (Left err, s) -> error "Error: parsing of input has failed"
         (Right xs, (s, max_monkey)) -> do
             print s
-            res1 <- H.lookup s 0
-            print res1
-            res1 <- H.lookup s 1
-            print res1
-            res1 <- H.lookup s max_monkey
-            print res1
-            res1 <- H.lookup s 6
-            print res1
-            res1 <- H.lookup s (max_monkey + 1)
-            print res1
+    let (_, (s, max_monkey)) = tst
+
+    monkeyHashTable <- runManyRounds 20 max_monkey s
+    --currMonkey <- fromJust <$> H.lookup s 0
+    --monkeyHashTable <- monkeyAction 0 (_items currMonkey) s
+
+    currMonkey <- fromJust <$> H.lookup monkeyHashTable 0
+    print currMonkey
+
+    currMonkey <- fromJust <$> H.lookup monkeyHashTable 1
+    print currMonkey
+
+    currMonkey <- fromJust <$> H.lookup monkeyHashTable 2
+    print currMonkey
+
+    checkMonkey <- fromJust <$> H.lookup monkeyHashTable 3
+    print checkMonkey
+
     print "yay"

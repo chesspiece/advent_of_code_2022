@@ -1,10 +1,10 @@
 {-# HLINT ignore "Use <&>" #-}
 {-# HLINT ignore "Use gets" #-}
 {-# LANGUAGE GADTs #-}
--- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
--- inside of ParsecT parser.
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+-- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
+-- inside of ParsecT parser.
 
 module Day11 (day11) where
 

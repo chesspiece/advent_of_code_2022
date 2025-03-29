@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant if" #-}
 
 -- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
 -- inside of ParsecT parser.
@@ -10,6 +11,7 @@
 module Day11 (day11) where
 
 import Control.Applicative (many, (*>), (<*))
+import Control.Monad (forM_)
 import Control.Monad.Trans (lift)
 import Text.Megaparsec (
     MonadParsec (getParserState, takeP),
@@ -166,7 +168,8 @@ chooseMonkey (x, y) flag
     | flag = x
     | not flag = y
 
-monkeyAction :: Int -> Int -> Int -> [Int] -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+monkeyAction ::
+    Int -> Int -> Int -> [Int] -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
 monkeyAction dv md currMonkeyIdx [] monkeyTable = return monkeyTable
 monkeyAction dv md currMonkeyIdx worryList monkeyTable = do
     currentMonkeyState <- fromJust <$> H.lookup monkeyTable currMonkeyIdx
@@ -193,10 +196,11 @@ monkeyAction dv md currMonkeyIdx worryList monkeyTable = do
 
     monkeyAction dv md currMonkeyIdx (_items currentMonkeyState) monkeyTable
 
-runManyRounds :: Int -> Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+runManyRounds ::
+    Int -> Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
 runManyRounds dv md 0 _ s = return s
 runManyRounds dv md roundsQuant quant s = do
-    hashTable <- runRound dv md  quant s
+    hashTable <- runRound dv md quant s
     runManyRounds dv md (roundsQuant - 1) quant hashTable
 
 runRound :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
@@ -208,32 +212,44 @@ runRound dv md quant s = _runRound dv md quant 0 s
         monkeyAction dv md idx (_items currMonkey) s
     _runRound dv md quant idx s = do
         currMonkey <- fromJust <$> H.lookup s idx
-        newHash <- monkeyAction dv md  idx (_items currMonkey) s
+        newHash <- monkeyAction dv md idx (_items currMonkey) s
         _runRound dv md (quant - 1) (idx + 1) newHash
 
-findTwoMaxMult :: Int -> HashTable Int MonkeyState -> IO (Int)
+findTwoMaxMult :: Int -> HashTable Int MonkeyState -> IO Int
 findTwoMaxMult quant s = _findTwoMaxMult quant 0 0 s
-    where
-        _findTwoMaxMult :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO (Int)
-        _findTwoMaxMult 0 max1 max2 s = do
-            currMonkey <- fromJust <$> H.lookup s 0
-            let quantity = _inspectsQuantity currMonkey
-            if quantity > max1 then
-                return $ quantity * max1
-            else if quantity > max2 then
+  where
+    _findTwoMaxMult :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO Int
+    _findTwoMaxMult 0 max1 max2 s = do
+        currMonkey <- fromJust <$> H.lookup s 0
+        let quantity = _inspectsQuantity currMonkey
+        if quantity > max1
+            then
                 return $ quantity * max1
             else
-                return $ max1 * max2
-        _findTwoMaxMult idx max1 max2 s = do
-            currMonkey <- fromJust <$> H.lookup s idx
-            let quantity = _inspectsQuantity currMonkey
-            if quantity > max1 then
+                if quantity > max2
+                    then
+                        return $ quantity * max1
+                    else
+                        return $ max1 * max2
+    _findTwoMaxMult idx max1 max2 s = do
+        currMonkey <- fromJust <$> H.lookup s idx
+        let quantity = _inspectsQuantity currMonkey
+        if quantity > max1
+            then
                 _findTwoMaxMult (idx - 1) quantity max1 s
-            else if quantity > max2 then
-                _findTwoMaxMult (idx - 1) max1 quantity s
             else
-                _findTwoMaxMult (idx - 1) max1 max2 s
+                if quantity > max2
+                    then
+                        _findTwoMaxMult (idx - 1) max1 quantity s
+                    else
+                        _findTwoMaxMult (idx - 1) max1 max2 s
 
+copyHashTable :: HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+copyHashTable oldTable = do
+    newTable <- H.new
+    entries <- H.toList oldTable
+    forM_ entries $ \(k, v) -> H.insert newTable k v
+    return newTable
 
 day11 :: IO ()
 day11 = do
@@ -244,12 +260,15 @@ day11 = do
         (Left err, s) -> error "Error: parsing of input has failed"
         (Right xs, (s, max_monkey, modVal)) -> do
             return ()
-    let (_, (s, max_monkey, modVal)) = tst
+    let (_, (tablePartOne, max_monkey, modVal)) = tst
 
-    print modVal
-    --monkeyHashTable <- runManyRounds 3 modVal 20 max_monkey s
-    --res <- findTwoMaxMult max_monkey monkeyHashTable
-    --print res
-    monkeyHashTable <- runManyRounds 1 modVal 10000 max_monkey s
+    --print modVal
+    tablePartTwo <- copyHashTable tablePartOne
+
+    monkeyHashTable <- runManyRounds 3 modVal 20 max_monkey tablePartOne
+    res <- findTwoMaxMult max_monkey monkeyHashTable
+    print res
+
+    monkeyHashTable <- runManyRounds 1 modVal 10000 max_monkey tablePartTwo
     res <- findTwoMaxMult max_monkey monkeyHashTable
     print res

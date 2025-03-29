@@ -14,46 +14,29 @@ import Text.Megaparsec (
     MonadParsec (getParserState, takeP),
     Parsec,
     ParsecT,
-    Stream (Tokens),
     eof,
-    getInput,
-    option,
     optional,
-    parseMaybe,
-    runParser,
     runParser',
     runParserT,
-    runParserT',
     setParserState,
     skipMany,
     try,
     (<|>),
  )
 
-import Control.Lens (Identity (runIdentity), makeLenses, (&), (.~))
-import Control.Monad (liftM)
-import Control.Monad.IO.Class (liftIO)
+import Control.Lens (makeLenses, (&), (.~))
 import Control.Monad.State (
     MonadState (get, put),
-    State,
     StateT,
-    evalState,
-    evalStateT,
-    gets,
     runState,
     runStateT,
-    state,
  )
 
 import Control.Arrow (Arrow (second))
-import Data.Bits (Bits (xor))
-import Data.Either (fromRight)
 import qualified Data.HashTable.IO as H
-import Data.Maybe (fromJust, fromMaybe)
+import Data.Maybe (fromJust)
 import Data.Void (Void)
-import GHC.RTS.Flags (DebugFlags (block_alloc))
 import Text.Megaparsec.Char (newline, string)
-import qualified Text.Megaparsec.Char as CH
 import Text.Megaparsec.Char.Lexer as L (decimal)
 
 data Operation where
@@ -203,13 +186,11 @@ monkeyAction currMonkeyIdx worryList monkeyTable = do
 
     monkeyAction currMonkeyIdx (_items currentMonkeyState) monkeyTable
 
-
 runManyRounds :: Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
 runManyRounds 0 _ s = return s
 runManyRounds roundsQuant quant s = do
     hashTable <- runRound quant s
     runManyRounds (roundsQuant - 1) quant hashTable
-
 
 runRound :: Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
 runRound quant s = _runRound quant 0 s
@@ -235,8 +216,8 @@ day11 = do
     let (_, (s, max_monkey)) = tst
 
     monkeyHashTable <- runManyRounds 20 max_monkey s
-    --currMonkey <- fromJust <$> H.lookup s 0
-    --monkeyHashTable <- monkeyAction 0 (_items currMonkey) s
+    -- currMonkey <- fromJust <$> H.lookup s 0
+    -- monkeyHashTable <- monkeyAction 0 (_items currMonkey) s
 
     currMonkey <- fromJust <$> H.lookup monkeyHashTable 0
     print currMonkey

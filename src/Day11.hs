@@ -48,7 +48,7 @@ data Operation where
     deriving (Show, Eq, Ord)
 
 type HashTable k v = H.BasicHashTable k v
-type Parser = ParsecT Void String (StateT (HashTable Int MonkeyState, Int) IO)
+type Parser = ParsecT Void String (StateT (HashTable Int MonkeyState, Int, Int) IO)
 type ParserInner = Parsec Void String
 
 data MonkeyState = MonkeyState
@@ -64,7 +64,7 @@ makeLenses ''MonkeyState
 
 monkeyParse :: Parser ()
 monkeyParse = do
-    (ht, cnt) <- get
+    (ht, cnt, modVal) <- get
     string "Monkey "
     monkey_index <- L.decimal
     string ":"
@@ -102,7 +102,7 @@ monkeyParse = do
                 , _inspectsQuantity = 0
                 }
     lift . lift $ H.insert ht monkey_index parsed_state
-    put (ht, cnt + 1)
+    put (ht, cnt + 1, modVal * divis)
     return ()
 
 itemsParse :: ParserInner [Int]
@@ -166,9 +166,9 @@ chooseMonkey (x, y) flag
     | flag = x
     | not flag = y
 
-monkeyAction :: Int -> [Int] -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
-monkeyAction currMonkeyIdx [] monkeyTable = return monkeyTable
-monkeyAction currMonkeyIdx worryList monkeyTable = do
+monkeyAction :: Int -> Int -> Int -> [Int] -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+monkeyAction dv md currMonkeyIdx [] monkeyTable = return monkeyTable
+monkeyAction dv md currMonkeyIdx worryList monkeyTable = do
     currentMonkeyState <- fromJust <$> H.lookup monkeyTable currMonkeyIdx
     H.insert
         monkeyTable
@@ -178,7 +178,7 @@ monkeyAction currMonkeyIdx worryList monkeyTable = do
             & inspectsQuantity .~ _inspectsQuantity currentMonkeyState + 1
         )
 
-    let newWorry = div (applyMonkeyOperation (_opertion currentMonkeyState) (head worryList)) 3
+    let newWorry = mod (div (applyMonkeyOperation (_opertion currentMonkeyState) (head worryList)) dv) md
     let checkDone = isDivisible newWorry (_divisibilityCheck currentMonkeyState)
     let newMonkeyIdx = chooseMonkey (_monkeyChoice currentMonkeyState) checkDone
 
@@ -191,25 +191,25 @@ monkeyAction currMonkeyIdx worryList monkeyTable = do
 
     currentMonkeyState <- fromJust <$> H.lookup monkeyTable currMonkeyIdx
 
-    monkeyAction currMonkeyIdx (_items currentMonkeyState) monkeyTable
+    monkeyAction dv md currMonkeyIdx (_items currentMonkeyState) monkeyTable
 
-runManyRounds :: Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
-runManyRounds 0 _ s = return s
-runManyRounds roundsQuant quant s = do
-    hashTable <- runRound quant s
-    runManyRounds (roundsQuant - 1) quant hashTable
+runManyRounds :: Int -> Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+runManyRounds dv md 0 _ s = return s
+runManyRounds dv md roundsQuant quant s = do
+    hashTable <- runRound dv md  quant s
+    runManyRounds dv md (roundsQuant - 1) quant hashTable
 
-runRound :: Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
-runRound quant s = _runRound quant 0 s
+runRound :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+runRound dv md quant s = _runRound dv md quant 0 s
   where
-    _runRound :: Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
-    _runRound 0 idx s = do
+    _runRound :: Int -> Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
+    _runRound dv md 0 idx s = do
         currMonkey <- fromJust <$> H.lookup s idx
-        monkeyAction idx (_items currMonkey) s
-    _runRound quant idx s = do
+        monkeyAction dv md idx (_items currMonkey) s
+    _runRound dv md quant idx s = do
         currMonkey <- fromJust <$> H.lookup s idx
-        newHash <- monkeyAction idx (_items currMonkey) s
-        _runRound (quant - 1) (idx + 1) newHash
+        newHash <- monkeyAction dv md  idx (_items currMonkey) s
+        _runRound dv md (quant - 1) (idx + 1) newHash
 
 findTwoMaxMult :: Int -> HashTable Int MonkeyState -> IO (Int)
 findTwoMaxMult quant s = _findTwoMaxMult quant 0 0 s
@@ -234,17 +234,22 @@ findTwoMaxMult quant s = _findTwoMaxMult quant 0 0 s
             else
                 _findTwoMaxMult (idx - 1) max1 max2 s
 
+
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
     txt <- readFile "task_11.txt"
-    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) (new_hashtable, -1)
+    tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) (new_hashtable, -1, 1)
     case tst of
         (Left err, s) -> error "Error: parsing of input has failed"
-        (Right xs, (s, max_monkey)) -> do
+        (Right xs, (s, max_monkey, modVal)) -> do
             return ()
-    let (_, (s, max_monkey)) = tst
+    let (_, (s, max_monkey, modVal)) = tst
 
-    monkeyHashTable <- runManyRounds 20 max_monkey s
+    print modVal
+    --monkeyHashTable <- runManyRounds 3 modVal 20 max_monkey s
+    --res <- findTwoMaxMult max_monkey monkeyHashTable
+    --print res
+    monkeyHashTable <- runManyRounds 1 modVal 10000 max_monkey s
     res <- findTwoMaxMult max_monkey monkeyHashTable
     print res

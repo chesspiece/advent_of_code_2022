@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 -- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
 -- inside of ParsecT parser.
 
@@ -169,7 +170,13 @@ monkeyAction :: Int -> [Int] -> HashTable Int MonkeyState -> IO (HashTable Int M
 monkeyAction currMonkeyIdx [] monkeyTable = return monkeyTable
 monkeyAction currMonkeyIdx worryList monkeyTable = do
     currentMonkeyState <- fromJust <$> H.lookup monkeyTable currMonkeyIdx
-    H.insert monkeyTable currMonkeyIdx (currentMonkeyState & items .~ tail worryList)
+    H.insert
+        monkeyTable
+        currMonkeyIdx
+        ( currentMonkeyState
+            & items .~ tail worryList
+            & inspectsQuantity .~ _inspectsQuantity currentMonkeyState + 1
+        )
 
     let newWorry = div (applyMonkeyOperation (_opertion currentMonkeyState) (head worryList)) 3
     let checkDone = isDivisible newWorry (_divisibilityCheck currentMonkeyState)
@@ -204,6 +211,29 @@ runRound quant s = _runRound quant 0 s
         newHash <- monkeyAction idx (_items currMonkey) s
         _runRound (quant - 1) (idx + 1) newHash
 
+findTwoMaxMult :: Int -> HashTable Int MonkeyState -> IO (Int)
+findTwoMaxMult quant s = _findTwoMaxMult quant 0 0 s
+    where
+        _findTwoMaxMult :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO (Int)
+        _findTwoMaxMult 0 max1 max2 s = do
+            currMonkey <- fromJust <$> H.lookup s 0
+            let quantity = _inspectsQuantity currMonkey
+            if quantity > max1 then
+                return $ quantity * max1
+            else if quantity > max2 then
+                return $ quantity * max1
+            else
+                return $ max1 * max2
+        _findTwoMaxMult idx max1 max2 s = do
+            currMonkey <- fromJust <$> H.lookup s idx
+            let quantity = _inspectsQuantity currMonkey
+            if quantity > max1 then
+                _findTwoMaxMult (idx - 1) quantity max1 s
+            else if quantity > max2 then
+                _findTwoMaxMult (idx - 1) max1 quantity s
+            else
+                _findTwoMaxMult (idx - 1) max1 max2 s
+
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
@@ -212,23 +242,9 @@ day11 = do
     case tst of
         (Left err, s) -> error "Error: parsing of input has failed"
         (Right xs, (s, max_monkey)) -> do
-            print s
+            return ()
     let (_, (s, max_monkey)) = tst
 
     monkeyHashTable <- runManyRounds 20 max_monkey s
-    -- currMonkey <- fromJust <$> H.lookup s 0
-    -- monkeyHashTable <- monkeyAction 0 (_items currMonkey) s
-
-    currMonkey <- fromJust <$> H.lookup monkeyHashTable 0
-    print currMonkey
-
-    currMonkey <- fromJust <$> H.lookup monkeyHashTable 1
-    print currMonkey
-
-    currMonkey <- fromJust <$> H.lookup monkeyHashTable 2
-    print currMonkey
-
-    checkMonkey <- fromJust <$> H.lookup monkeyHashTable 3
-    print checkMonkey
-
-    print "yay"
+    res <- findTwoMaxMult max_monkey monkeyHashTable
+    print res

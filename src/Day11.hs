@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
 {-# HLINT ignore "Redundant if" #-}
 
 -- I use ParsecT monad transformer here in order to ahve an example of using Parsec subparser
@@ -198,9 +199,9 @@ monkeyAction dv md currMonkeyIdx worryList monkeyTable = do
 
 runManyRounds ::
     Int -> Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
-runManyRounds dv md 0 _ s = return s
-runManyRounds dv md roundsQuant quant s = do
-    hashTable <- runRound dv md quant s
+runManyRounds dv md 0 _ monkeyHashTable = return monkeyHashTable
+runManyRounds dv md roundsQuant quant monkeyHashTable = do
+    hashTable <- runRound dv md quant monkeyHashTable
     runManyRounds dv md (roundsQuant - 1) quant hashTable
 
 runRound :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
@@ -216,11 +217,11 @@ runRound dv md quant s = _runRound dv md quant 0 s
         _runRound dv md (quant - 1) (idx + 1) newHash
 
 findTwoMaxMult :: Int -> HashTable Int MonkeyState -> IO Int
-findTwoMaxMult quant s = _findTwoMaxMult quant 0 0 s
+findTwoMaxMult quant = _findTwoMaxMult quant 0 0
   where
     _findTwoMaxMult :: Int -> Int -> Int -> HashTable Int MonkeyState -> IO Int
-    _findTwoMaxMult 0 max1 max2 s = do
-        currMonkey <- fromJust <$> H.lookup s 0
+    _findTwoMaxMult 0 max1 max2 mokeyHashTable = do
+        currMonkey <- fromJust <$> H.lookup mokeyHashTable 0
         let quantity = _inspectsQuantity currMonkey
         if quantity > max1
             then
@@ -231,18 +232,18 @@ findTwoMaxMult quant s = _findTwoMaxMult quant 0 0 s
                         return $ quantity * max1
                     else
                         return $ max1 * max2
-    _findTwoMaxMult idx max1 max2 s = do
-        currMonkey <- fromJust <$> H.lookup s idx
+    _findTwoMaxMult idx max1 max2 monkeyHashTable = do
+        currMonkey <- fromJust <$> H.lookup monkeyHashTable idx
         let quantity = _inspectsQuantity currMonkey
         if quantity > max1
             then
-                _findTwoMaxMult (idx - 1) quantity max1 s
+                _findTwoMaxMult (idx - 1) quantity max1 monkeyHashTable
             else
                 if quantity > max2
                     then
-                        _findTwoMaxMult (idx - 1) max1 quantity s
+                        _findTwoMaxMult (idx - 1) max1 quantity monkeyHashTable
                     else
-                        _findTwoMaxMult (idx - 1) max1 max2 s
+                        _findTwoMaxMult (idx - 1) max1 max2 monkeyHashTable
 
 copyHashTable :: HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
 copyHashTable oldTable = do
@@ -262,7 +263,7 @@ day11 = do
             return ()
     let (_, (tablePartOne, max_monkey, modVal)) = tst
 
-    --print modVal
+    -- print modVal
     tablePartTwo <- copyHashTable tablePartOne
 
     monkeyHashTable <- runManyRounds 3 modVal 20 max_monkey tablePartOne

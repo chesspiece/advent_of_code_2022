@@ -123,14 +123,10 @@ operationParse =
         takeP Nothing 23
         -- string "  Operation: new = old "
         ret <-
-            Add
-                <$> try (string "+ " *> decimal)
-                    <|> Mult
-                <$> try (string "* " *> decimal)
-                    <|> AddOld
-                <$ try (string "+ old")
-                    <|> MultOld
-                <$ string "* old"
+                Add     <$> try (string "+ " *> decimal)
+            <|> Mult    <$> try (string "* " *> decimal)
+            <|> AddOld  <$  try (string "+ old")
+            <|> MultOld <$  string "* old"
         newline
         return ret
 
@@ -224,26 +220,20 @@ findTwoMaxMult quant = _findTwoMaxMult quant 0 0
         currMonkey <- fromJust <$> H.lookup mokeyHashTable 0
         let quantity = _inspectsQuantity currMonkey
         if quantity > max1
-            then
-                return $ quantity * max1
-            else
-                if quantity > max2
-                    then
-                        return $ quantity * max1
-                    else
-                        return $ max1 * max2
+            then return $ quantity * max1
+        else if quantity > max2
+            then return $ quantity * max1
+        else
+            return $ max1 * max2
     _findTwoMaxMult idx max1 max2 monkeyHashTable = do
         currMonkey <- fromJust <$> H.lookup monkeyHashTable idx
         let quantity = _inspectsQuantity currMonkey
         if quantity > max1
-            then
-                _findTwoMaxMult (idx - 1) quantity max1 monkeyHashTable
-            else
-                if quantity > max2
-                    then
-                        _findTwoMaxMult (idx - 1) max1 quantity monkeyHashTable
-                    else
-                        _findTwoMaxMult (idx - 1) max1 max2 monkeyHashTable
+            then _findTwoMaxMult (idx - 1) quantity max1 monkeyHashTable
+        else if quantity > max2
+            then _findTwoMaxMult (idx - 1) max1 quantity monkeyHashTable
+        else
+            _findTwoMaxMult (idx - 1) max1 max2 monkeyHashTable
 
 copyHashTable :: HashTable Int MonkeyState -> IO (HashTable Int MonkeyState)
 copyHashTable oldTable = do

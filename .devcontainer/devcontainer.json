@@ -1,14 +1,14 @@
 {
 	"name": "Ubuntu",
-	"image": "mcr.microsoft.com/devcontainers/base:jammy",
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
 	"features": {
 		"ghcr.io/devcontainers-extra/features/haskell:2": {
 			"installHLS": true,
 			"downgradeGhcToSupportHls": true,
 			"adjustBash": true,
-			"ghcVersion": "9.6.6",
+			"ghcVersion": "9.6.7",
 			"cabalVersion": "3.12.1.0",
-			"globalPackages": "hlint fourmolu",
+			"globalPackages": "hlint fourmolu ghci-dap haskell-debug-adapter",
 			"globalLibraries": "",
 			"installStack": false
 		}
@@ -27,11 +27,12 @@
         "haskell.haskell",
         "justusadam.language-haskell",
         "editorconfig.editorconfig",
-        "jcanero.hoogle-vscode"
+        "jcanero.hoogle-vscode",
+        "phoityne.phoityne-vscode"
       ]
     },
 	"settings": {
-		"haskell.manageHLS": "GHCup",
+		"haskell.manageHLS": "PATH",
 		"git.openRepositoryInParentFolders": "never",
 		"[haskell]": {
 			"editor.defaultFormatter": "haskell.haskell",

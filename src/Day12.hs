@@ -8,17 +8,18 @@
 
 module Day12 (day12) where
 
+import Control.Monad.Trans (lift)
 import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices)
-import Data.Vector.Generic (streamR)
+import Data.Maybe (fromJust)
 
-parseString :: String -> ([Maybe Int], [Maybe Int])
-parseString input_text =
+parse :: String -> (Maybe (Int, Int), [[Int]])
+parse inputText =
     let
-        start_idx = map checkStart $ lines input_text
-        end_idx = map checkStart $ lines input_text
+        inputMatrixStr = lines inputText
+        indexes = findStartEnd inputMatrixStr Nothing Nothing
      in
-        (start_idx, end_idx)
+        (indexes, map (map letter2elevation) inputMatrixStr)
 
 checkStart :: [Char] -> Maybe Int
 checkStart = findIndex $ \s -> s == 'S'
@@ -55,4 +56,7 @@ letter2elevation c = ord c - ord 'a'
 day12 :: IO ()
 day12 = do
     txt <- readFile "task_12.txt"
-    print "yay!"
+    (indexes, maze) <- return . parse $ txt
+    indexes <- return . fromJust $ indexes
+    print maze
+    print indexes

@@ -15,7 +15,7 @@ import Data.Maybe (fromJust)
 
 newtype MazeCoord = MazeCoord (Int, Int)
 
-parse :: String -> (Maybe (Int, Int), [[Int]])
+parse :: String -> (Maybe ([Int], [Int]), [[Int]])
 parse inputText =
     let inputMatrixStr = lines inputText
         indexes = findStartEnd inputMatrixStr 0 Nothing Nothing
@@ -27,20 +27,20 @@ checkStart = findIndex $ \s -> s == 'S'
 checkEnd :: [Char] -> Maybe Int
 checkEnd = findIndex $ \s -> s == 'E'
 
-findStartEnd :: [String] -> Int -> Maybe Int -> Maybe Int -> Maybe (Int, Int)
-findStartEnd [] _ Nothing _ = Nothing
-findStartEnd [] _ _ Nothing = Nothing
-findStartEnd text _ (Just startIdx) (Just endIdx) = Just (startIdx, endIdx)
-findStartEnd (row : nextRows) _ Nothing Nothing =
-    let startIdx = checkStart row
-        endIdx = checkEnd row
-    in  findStartEnd nextRows 0 startIdx endIdx
-findStartEnd (row : nextRows) _ (Just startIdx) Nothing =
-    let endIdx = checkEnd row
-    in  findStartEnd nextRows 0 (Just startIdx) endIdx
-findStartEnd (row : nextRows) _ Nothing (Just endIdx) =
-    let startIdx = checkStart row
-    in  findStartEnd nextRows 0 startIdx (Just endIdx)
+findStartEnd :: [String] -> Int -> Maybe [Int] -> Maybe [Int] -> Maybe ([Int], [Int])
+findStartEnd [] rowIdx Nothing _ = error "Should be impossible in this task"
+findStartEnd [] rowIdx _ Nothing = error "Should be impossible in this task"
+findStartEnd text rowIdx (Just startIdx) (Just endIdx) = Just (startIdx, endIdx)
+findStartEnd (row : nextRows) rowIdx Nothing Nothing =
+    let startIdx = sequence [Just rowIdx, checkStart row]
+        endIdx = sequence [Just rowIdx, checkEnd row]
+    in  findStartEnd nextRows (rowIdx + 1) startIdx endIdx
+findStartEnd (row : nextRows) rowIdx (Just startIdx) Nothing =
+    let endIdx = sequence [Just rowIdx, checkEnd row]
+    in  findStartEnd nextRows (rowIdx + 1) (Just startIdx) endIdx
+findStartEnd (row : nextRows) rowIdx Nothing (Just endIdx) =
+    let startIdx = sequence [Just rowIdx, checkStart row]
+    in  findStartEnd nextRows (rowIdx + 1) startIdx (Just endIdx)
 
 letter2elevation :: Char -> Int
 letter2elevation 'S' = ord 'a' - ord 'a'

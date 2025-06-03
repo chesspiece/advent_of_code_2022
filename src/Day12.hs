@@ -13,13 +13,13 @@ import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices)
 import Data.Maybe (fromJust)
 
+newtype MazeCoord = MazeCoord (Int, Int)
+
 parse :: String -> (Maybe (Int, Int), [[Int]])
 parse inputText =
-    let
-        inputMatrixStr = lines inputText
-        indexes = findStartEnd inputMatrixStr Nothing Nothing
-     in
-        (indexes, map (map letter2elevation) inputMatrixStr)
+    let inputMatrixStr = lines inputText
+        indexes = findStartEnd inputMatrixStr 0 Nothing Nothing
+    in  (indexes, map (map letter2elevation) inputMatrixStr)
 
 checkStart :: [Char] -> Maybe Int
 checkStart = findIndex $ \s -> s == 'S'
@@ -27,26 +27,20 @@ checkStart = findIndex $ \s -> s == 'S'
 checkEnd :: [Char] -> Maybe Int
 checkEnd = findIndex $ \s -> s == 'E'
 
-findStartEnd :: [String] -> Maybe Int -> Maybe Int -> Maybe (Int, Int)
-findStartEnd [] Nothing _ = Nothing
-findStartEnd [] _ Nothing = Nothing
-findStartEnd text (Just startIdx) (Just endIdx) = Just (startIdx, endIdx)
-findStartEnd (row : nextRows) Nothing Nothing =
-    let
-        startIdx = checkStart row
+findStartEnd :: [String] -> Int -> Maybe Int -> Maybe Int -> Maybe (Int, Int)
+findStartEnd [] _ Nothing _ = Nothing
+findStartEnd [] _ _ Nothing = Nothing
+findStartEnd text _ (Just startIdx) (Just endIdx) = Just (startIdx, endIdx)
+findStartEnd (row : nextRows) _ Nothing Nothing =
+    let startIdx = checkStart row
         endIdx = checkEnd row
-     in
-        findStartEnd nextRows startIdx endIdx
-findStartEnd (row : nextRows) (Just startIdx) Nothing =
-    let
-        endIdx = checkEnd row
-     in
-        findStartEnd nextRows (Just startIdx) endIdx
-findStartEnd (row : nextRows) Nothing (Just endIdx) =
-    let
-        startIdx = checkStart row
-     in
-        findStartEnd nextRows startIdx (Just endIdx)
+    in  findStartEnd nextRows 0 startIdx endIdx
+findStartEnd (row : nextRows) _ (Just startIdx) Nothing =
+    let endIdx = checkEnd row
+    in  findStartEnd nextRows 0 (Just startIdx) endIdx
+findStartEnd (row : nextRows) _ Nothing (Just endIdx) =
+    let startIdx = checkStart row
+    in  findStartEnd nextRows 0 startIdx (Just endIdx)
 
 letter2elevation :: Char -> Int
 letter2elevation 'S' = ord 'a' - ord 'a'

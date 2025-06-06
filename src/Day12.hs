@@ -13,9 +13,13 @@ import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices)
 import Data.Maybe (fromJust)
 
-newtype MazeCoord = MazeCoord (Int, Int)
+data MazeCoord = MazeCoord Int Int deriving (Show)
 
-parse :: String -> (Maybe ([Int], [Int]), [[Int]])
+fromList :: [Int] -> MazeCoord
+fromList [x, y] = MazeCoord x y
+fromList _ = error "Should be impossible in this task"
+
+parse :: String -> (Maybe (MazeCoord, MazeCoord), [[Int]])
 parse inputText =
     let inputMatrixStr = lines inputText
         indexes = findStartEnd inputMatrixStr 0 Nothing Nothing
@@ -27,19 +31,20 @@ checkStart = findIndex $ \s -> s == 'S'
 checkEnd :: [Char] -> Maybe Int
 checkEnd = findIndex $ \s -> s == 'E'
 
-findStartEnd :: [String] -> Int -> Maybe [Int] -> Maybe [Int] -> Maybe ([Int], [Int])
+findStartEnd ::
+    [String] -> Int -> Maybe MazeCoord -> Maybe MazeCoord -> Maybe (MazeCoord, MazeCoord)
 findStartEnd [] rowIdx Nothing _ = error "Should be impossible in this task"
 findStartEnd [] rowIdx _ Nothing = error "Should be impossible in this task"
 findStartEnd text rowIdx (Just startIdx) (Just endIdx) = Just (startIdx, endIdx)
 findStartEnd (row : nextRows) rowIdx Nothing Nothing =
-    let startIdx = sequence [Just rowIdx, checkStart row]
-        endIdx = sequence [Just rowIdx, checkEnd row]
+    let startIdx = fromList <$> sequence [Just rowIdx, checkStart row]
+        endIdx = fromList <$> sequence [Just rowIdx, checkEnd row]
     in  findStartEnd nextRows (rowIdx + 1) startIdx endIdx
 findStartEnd (row : nextRows) rowIdx (Just startIdx) Nothing =
-    let endIdx = sequence [Just rowIdx, checkEnd row]
+    let endIdx = fromList <$> sequence [Just rowIdx, checkEnd row]
     in  findStartEnd nextRows (rowIdx + 1) (Just startIdx) endIdx
 findStartEnd (row : nextRows) rowIdx Nothing (Just endIdx) =
-    let startIdx = sequence [Just rowIdx, checkStart row]
+    let startIdx = fromList <$> sequence [Just rowIdx, checkStart row]
     in  findStartEnd nextRows (rowIdx + 1) startIdx (Just endIdx)
 
 letter2elevation :: Char -> Int

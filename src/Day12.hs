@@ -13,6 +13,9 @@ import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices)
 import Data.Maybe (fromJust)
 
+-- import Data.Set
+-- import Data.Vector
+
 data MazeCoord = MazeCoord Int Int deriving (Show)
 
 fromList :: [Int] -> MazeCoord
@@ -51,6 +54,30 @@ letter2elevation :: Char -> Int
 letter2elevation 'S' = ord 'a' - ord 'a'
 letter2elevation 'E' = ord 'z' - ord 'a'
 letter2elevation c = ord c - ord 'a'
+
+aStar ::
+    -- start node
+    MazeCoord ->
+    -- end node
+    MazeCoord ->
+    -- Maze
+    [[MazeCoord]]
+aStar = undefined
+  where
+    aStar' ::
+        -- start  Node
+        MazeCoord ->
+        -- end node
+        MazeCoord ->
+        -- cost func
+        (MazeCoord -> Int) ->
+        -- heuristic func
+        (MazeCoord -> Int) ->
+        -- closed set of visited nodes
+        a ->
+        -- priority queue of nodes
+        b
+    aStar' = undefined
 
 day12 :: IO ()
 day12 = do

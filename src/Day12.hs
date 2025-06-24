@@ -13,10 +13,8 @@ import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices)
 import Data.Maybe (fromJust)
 
--- import Data.Set
-
 import qualified Data.PQueue.Min as PQ
---import Data.Vector as V
+import qualified Data.Vector as V
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq)
 

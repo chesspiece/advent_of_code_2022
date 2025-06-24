@@ -18,7 +18,7 @@ import Data.Maybe (fromJust)
 import qualified Data.PQueue.Min as PQ
 --import Data.Vector as V
 
-data MazeCoord = MazeCoord Int Int deriving (Show)
+data MazeCoord = MazeCoord Int Int deriving (Show, Eq)
 
 fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
@@ -63,23 +63,31 @@ aStar ::
     -- end node
     MazeCoord ->
     -- Maze
-    [[MazeCoord]]
-aStar = undefined
+    [[MazeCoord]] ->
+    -- return path
+    Maybe MazeCoord
+aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode))
   where
     aStar' ::
-        -- start  Node
-        MazeCoord ->
         -- end node
         MazeCoord ->
-        -- cost func
-        (MazeCoord -> Int) ->
-        -- heuristic func
-        (MazeCoord -> Int) ->
-        -- closed set of visited nodes
-        a ->
         -- priority queue of nodes
-        b
-    aStar' = undefined
+        PQ.MinQueue (Int, MazeCoord) ->
+        -- return path
+        Maybe MazeCoord
+    aStar' nd2@(MazeCoord xEnd yEnd) pqNodes
+        | PQ.null pqNodes = Nothing
+        | currNode == nd2 = Just nd2
+        | currNode /= nd2 =
+            let
+                (cost, currNode) = PQ.findMin pqNodes
+                neighbours = undefined
+            in undefined
+        where
+            (cost, currNode) = PQ.findMin pqNodes
+            heuristic (MazeCoord x1 y1) = abs (xEnd -x1) + abs (yEnd - y1)
+            neibours :: MazeCoord -> [MazeCoord]
+            neibours = undefined
 
 day12 :: IO ()
 day12 = do

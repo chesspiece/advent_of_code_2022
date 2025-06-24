@@ -14,7 +14,9 @@ import Data.List (findIndex, findIndices)
 import Data.Maybe (fromJust)
 
 -- import Data.Set
--- import Data.Vector
+
+import qualified Data.PQueue.Min as PQ
+--import Data.Vector as V
 
 data MazeCoord = MazeCoord Int Int deriving (Show)
 

@@ -73,6 +73,7 @@ library
         , vector
         , hashmap
         , hashtables
+        , pqueue
 
     default-language: Haskell2010
 

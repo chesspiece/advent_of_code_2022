@@ -1,7 +1,6 @@
 {-# HLINT ignore "Use <&>" #-}
 {-# HLINT ignore "Use gets" #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Redundant if" #-}

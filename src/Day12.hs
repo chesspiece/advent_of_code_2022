@@ -83,23 +83,23 @@ aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode)) maze
       where
         (cost, currNode) = PQ.findMin pqNodes
         heuristic (MazeCoord x1 y1) = abs (xEnd - x1) + abs (yEnd - y1)
-        neighbours :: MazeCoord -> Maze -> [Int]
+        neighbours :: MazeCoord -> Maze -> [MazeCoord]
         neighbours (MazeCoord x y) (Maze maze maxX maxY) = do
             let a =
-                    if ((x + 1) <= maxX) && ((y + 1) <= maxY) && ((x + 1) >= 0) && ((y + 1) >= 0)
-                        then Just $ (maze V.! (x + 1)) V.! (y + 1)
+                    if (x + 1) <= maxX
+                        then Just $ MazeCoord (x + 1) y
                         else Nothing
             let b =
-                    if ((x + 1) <= maxX) && ((y - 1) <= maxY) && ((x + 1) >= 0) && ((y + 1) >= 0)
-                        then Just $ (maze V.! (x + 1)) V.! (y + 1)
+                    if (x - 1) >= 0
+                        then Just $ MazeCoord (x - 1) y
                         else Nothing
             let c =
-                    if ((x - 1) <= maxX) && ((y + 1) <= maxY) && ((x + 1) >= 0) && ((y + 1) >= 0)
-                        then Just $ (maze V.! (x + 1)) V.! (y + 1)
+                    if (y + 1) <= maxY
+                        then Just $ MazeCoord x (y + 1)
                         else Nothing
             let d =
-                    if ((x - 1) <= maxX) && ((y - 1) <= maxY) && ((x + 1) >= 0) && ((y + 1) >= 0)
-                        then Just $ (maze V.! (x + 1)) V.! (y + 1)
+                    if (y - 1) <= 0
+                        then Just $ MazeCoord x (y - 1)
                         else Nothing
             fromJust . sequence $ filter isJust [a, b, c, d]
 

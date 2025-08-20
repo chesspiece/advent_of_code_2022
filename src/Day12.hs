@@ -84,24 +84,26 @@ aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode)) maze
         (cost, currNode) = PQ.findMin pqNodes
         heuristic (MazeCoord x1 y1) = abs (xEnd - x1) + abs (yEnd - y1)
         neighbours :: MazeCoord -> Maze -> [MazeCoord]
-        neighbours (MazeCoord x y) (Maze maze maxX maxY) = do
-            let a =
+        neighbours (MazeCoord x y) (Maze maze maxX maxY) =
+            let
+                a =
                     if (x + 1) <= maxX
                         then Just $ MazeCoord (x + 1) y
                         else Nothing
-            let b =
+                b =
                     if (x - 1) >= 0
                         then Just $ MazeCoord (x - 1) y
                         else Nothing
-            let c =
+                c =
                     if (y + 1) <= maxY
                         then Just $ MazeCoord x (y + 1)
                         else Nothing
-            let d =
+                d =
                     if (y - 1) <= 0
                         then Just $ MazeCoord x (y - 1)
                         else Nothing
-            fromJust . sequence $ filter isJust [a, b, c, d]
+            in
+                fromJust . sequence $ filter isJust [a, b, c, d]
 
 day12 :: IO ()
 day12 = do

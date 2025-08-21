@@ -4,7 +4,7 @@
 	"features": {
 		"ghcr.io/devcontainers-extra/features/haskell:2": {
 			"installHLS": true,
-			"downgradeGhcToSupportHls": true,
+			"downgradeGhcToSupportHls": false,
 			"adjustBash": true,
 			"ghcVersion": "9.6.7",
 			"cabalVersion": "3.12.1.0",
@@ -13,14 +13,6 @@
 			"installStack": false
 		}
 	},
-	"containerEnv": {
-            "HOME": "/home/vscode"
-    },
-	"runArgs": [
-	  "--userns=keep-id"
-	],
-	"containerUser": "vscode",
-	"remoteUser": "vscode",
 	"customizations": {
     "vscode": {
       "extensions": [

@@ -26,10 +26,10 @@ parse :: String -> (Maybe (MazeCoord, MazeCoord), Maze)
 parse inputText =
     let inputMatrixStr = lines inputText
         startEndIndexes = findStartEnd inputMatrixStr 0 Nothing Nothing
-        numColumns = length inputMatrixStr
-        numRows = length $ head inputMatrixStr
+        numRows = length inputMatrixStr
+        numColumns = length $ head inputMatrixStr
     in  ( startEndIndexes
-        , Maze (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr) numRows numColumns
+        , Maze (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr) numColumns numRows
         )
 
 checkStart :: [Char] -> Maybe Int

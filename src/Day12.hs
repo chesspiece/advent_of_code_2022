@@ -16,17 +16,21 @@ import qualified Data.Vector as V
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq)
 
-data Maze = Maze (V.Vector (V.Vector Int)) Int Int
+data Maze = Maze (V.Vector (V.Vector Int)) Int Int deriving (Show, Eq)
 
 fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
 fromList _ = error "Should be impossible in this task"
 
-parse :: String -> (Maybe (MazeCoord, MazeCoord), [[Int]])
+parse :: String -> (Maybe (MazeCoord, MazeCoord), Maze)
 parse inputText =
     let inputMatrixStr = lines inputText
-        indexes = findStartEnd inputMatrixStr 0 Nothing Nothing
-    in  (indexes, map (map letter2elevation) inputMatrixStr)
+        startEndIndexes = findStartEnd inputMatrixStr 0 Nothing Nothing
+        numColumns = length inputMatrixStr
+        numRows = length $ head inputMatrixStr
+    in  ( startEndIndexes
+        , Maze (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr) numRows numColumns
+        )
 
 checkStart :: [Char] -> Maybe Int
 checkStart = findIndex $ \s -> s == 'S'

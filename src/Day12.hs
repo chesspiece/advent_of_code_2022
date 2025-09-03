@@ -10,6 +10,7 @@ module Day12 (day12) where
 import Control.Monad.Trans (lift)
 import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices)
+import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, isJust)
 import qualified Data.PQueue.Min as PQ
 import qualified Data.Vector as V
@@ -22,6 +23,12 @@ fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
 fromList _ = error "Should be impossible in this task"
 
+getMap :: Maze -> V.Vector (V.Vector Int)
+getMap (Maze map _ _) = map
+
+getMaxCoord :: Maze -> (Int, Int)
+getMaxCoord (Maze _ maxRow maxColumn) = (maxRow, maxColumn)
+
 parse :: String -> (Maybe (MazeCoord, MazeCoord), Maze)
 parse inputText =
     let inputMatrixStr = lines inputText
@@ -29,7 +36,7 @@ parse inputText =
         numRows = length inputMatrixStr
         numColumns = length $ head inputMatrixStr
     in  ( startEndIndexes
-        , Maze (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr) numColumns numRows
+        , Maze (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr) numRows numColumns
         )
 
 checkStart :: [Char] -> Maybe Int
@@ -37,6 +44,9 @@ checkStart = findIndex $ \s -> s == 'S'
 
 checkEnd :: [Char] -> Maybe Int
 checkEnd = findIndex $ \s -> s == 'E'
+
+elevationAt :: Maze -> MazeCoord -> Int
+elevationAt (Maze grid _ _) (MazeCoord r c) = (grid V.! r) V.! c
 
 findStartEnd ::
     [String] -> Int -> Maybe MazeCoord -> Maybe MazeCoord -> Maybe (MazeCoord, MazeCoord)
@@ -58,6 +68,41 @@ letter2elevation :: Char -> Int
 letter2elevation 'S' = ord 'a' - ord 'a'
 letter2elevation 'E' = ord 'z' - ord 'a'
 letter2elevation c = ord c - ord 'a'
+
+neighbours :: MazeCoord -> Maze -> [MazeCoord]
+neighbours (MazeCoord x y) (Maze maze maxRows maxColumns) =
+    let
+        a =
+            if (x + 1) < maxColumns
+                then Just $ MazeCoord (x + 1) y
+                else Nothing
+        b =
+            if (x - 1) >= 0
+                then Just $ MazeCoord (x - 1) y
+                else Nothing
+        c =
+            if (y + 1) < maxRows
+                then Just $ MazeCoord x (y + 1)
+                else Nothing
+        d =
+            if (y - 1) >= 0
+                then Just $ MazeCoord x (y - 1)
+                else Nothing
+    in
+        fromJust . sequence $ filter isJust [a, b, c, d]
+
+neighborsClimbOK :: Maze -> MazeCoord -> [MazeCoord]
+neighborsClimbOK maze coord =
+    let currentElevation = elevationAt maze coord
+    in  filter (\v -> elevationAt maze v <= currentElevation + 1) (neighbours coord maze)
+
+manhattanDistance ::
+    -- current coordinate
+    MazeCoord ->
+    -- desired end coordinate
+    MazeCoord ->
+    Int
+manhattanDistance (MazeCoord x1 y1) (MazeCoord xEnd yEnd) = abs (xEnd - x1) + abs (yEnd - y1)
 
 aStar ::
     -- start node
@@ -86,28 +131,9 @@ aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode)) maze
             in  undefined
       where
         (cost, currNode) = PQ.findMin pqNodes
-        heuristic (MazeCoord x1 y1) = abs (xEnd - x1) + abs (yEnd - y1)
-        neighbours :: MazeCoord -> Maze -> [MazeCoord]
-        neighbours (MazeCoord x y) (Maze maze maxX maxY) =
-            let
-                a =
-                    if (x + 1) <= maxX
-                        then Just $ MazeCoord (x + 1) y
-                        else Nothing
-                b =
-                    if (x - 1) >= 0
-                        then Just $ MazeCoord (x - 1) y
-                        else Nothing
-                c =
-                    if (y + 1) <= maxY
-                        then Just $ MazeCoord x (y + 1)
-                        else Nothing
-                d =
-                    if (y - 1) <= 0
-                        then Just $ MazeCoord x (y - 1)
-                        else Nothing
-            in
-                fromJust . sequence $ filter isJust [a, b, c, d]
+
+-- currG = gScore M.! curr
+-- Manheatten distance
 
 day12 :: IO ()
 day12 = do
@@ -115,4 +141,7 @@ day12 = do
     (indexes, maze) <- return . parse $ txt
     indexes <- return . fromJust $ indexes
     print maze
+    let mp = getMap maze
+    let (maxR, maxC) = getMaxCoord maze
+    print $ (mp V.! (maxR - 1)) V.! (maxC - 1)
     print indexes

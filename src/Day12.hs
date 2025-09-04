@@ -1,6 +1,7 @@
 {-# HLINT ignore "Use <&>" #-}
 {-# HLINT ignore "Use gets" #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Redundant if" #-}
@@ -9,15 +10,19 @@ module Day12 (day12) where
 
 import Control.Monad.Trans (lift)
 import Data.Char (isAsciiLower, ord)
-import Data.List (findIndex, findIndices)
+import Data.List (findIndex, findIndices, foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, isJust)
 import qualified Data.PQueue.Min as PQ
 import qualified Data.Vector as V
 
-data MazeCoord = MazeCoord Int Int deriving (Show, Eq)
+data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 
 data Maze = Maze (V.Vector (V.Vector Int)) Int Int deriving (Show, Eq)
+data MazeBool where
+  MazeBool :: (V.Vector (V.Vector Bool)) -> MazeBool
+  deriving (Show, Eq)
+
 
 fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
@@ -69,40 +74,40 @@ letter2elevation 'S' = ord 'a' - ord 'a'
 letter2elevation 'E' = ord 'z' - ord 'a'
 letter2elevation c = ord c - ord 'a'
 
-neighbours :: MazeCoord -> Maze -> [MazeCoord]
-neighbours (MazeCoord x y) (Maze maze maxRows maxColumns) =
+neighbours :: MazeCoord -> Maze -> MazeBool -> [MazeCoord]
+neighbours (MazeCoord x y)  (Maze maze maxRows maxColumns) (MazeBool mzbool) =
     let
         a =
-            if (x + 1) < maxColumns
+            if (x + 1) < maxColumns && not ((mzbool V.! (x + 1)) V.! y)
                 then Just $ MazeCoord (x + 1) y
                 else Nothing
         b =
-            if (x - 1) >= 0
+            if (x - 1) >= 0 && not ((mzbool V.! (x - 1)) V.! y)
                 then Just $ MazeCoord (x - 1) y
                 else Nothing
         c =
-            if (y + 1) < maxRows
+            if (y + 1) < maxRows && not ((mzbool V.! x) V.! (y + 1))
                 then Just $ MazeCoord x (y + 1)
                 else Nothing
         d =
-            if (y - 1) >= 0
+            if (y - 1) >= 0 && not ((mzbool V.! x) V.! (y - 1))
                 then Just $ MazeCoord x (y - 1)
                 else Nothing
     in
         fromJust . sequence $ filter isJust [a, b, c, d]
 
-neighborsClimbOK :: Maze -> MazeCoord -> [MazeCoord]
-neighborsClimbOK maze coord =
+neighborsClimbOK :: Maze -> MazeBool -> MazeCoord -> [MazeCoord]
+neighborsClimbOK maze mazeBool coord =
     let currentElevation = elevationAt maze coord
-    in  filter (\v -> elevationAt maze v <= currentElevation + 1) (neighbours coord maze)
+    in  filter (\v -> elevationAt maze v <= currentElevation + 1) (neighbours coord maze mazeBool)
 
 manhattanDistance ::
     -- current coordinate
     MazeCoord ->
     -- desired end coordinate
     MazeCoord ->
-    Int
-manhattanDistance (MazeCoord x1 y1) (MazeCoord xEnd yEnd) = abs (xEnd - x1) + abs (yEnd - y1)
+    (Int, MazeCoord)
+manhattanDistance currCoord@(MazeCoord x1 y1) (MazeCoord xEnd yEnd) = (abs (xEnd - x1) + abs (yEnd - y1),  currCoord)
 
 aStar ::
     -- start node
@@ -113,24 +118,31 @@ aStar ::
     Maze ->
     -- return path
     Maybe MazeCoord
-aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode)) maze
+aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode)) maze (MazeBool $ V.replicate 3 (V.replicate 2 False))
   where
     aStar' ::
         -- end node
         MazeCoord ->
         -- priority queue of nodes
         PQ.MinQueue (Int, MazeCoord) ->
+        -- maze
         Maze ->
+        -- needed to check in O(1) if node was visited
+        MazeBool ->
         -- return path
         Maybe MazeCoord
-    aStar' nd2@(MazeCoord xEnd yEnd) pqNodes maze
-        | PQ.null pqNodes = Nothing
+    aStar' nd2@(MazeCoord xEnd yEnd) pqNodes maze mazeBool
+        -- | PQ.null pqNodes = Nothing
         | currNode == nd2 = Just nd2
         | currNode /= nd2 =
-            let neighbours = undefined
-            in  undefined
-      where
-        (cost, currNode) = PQ.findMin pqNodes
+            let
+                --neighboursFd :: [(Int, MazeCoord)] = map (`manhattanDistance` nd2) $ neighbours nd2 maze
+                neighboursFd :: [(Int, MazeCoord)] = map (flip manhattanDistance nd2) $ neighborsClimbOK maze mazeBool currNode
+                pqNodesCurr = foldl' (flip PQ.insert) pqNodesCurr neighboursFd
+            in   aStar' nd2 pqNodes maze mazeBool
+        where
+            ((cost, currNode), pqNodesCurr) = PQ.deleteFindMin pqNodes
+            --pqNodesNext = undefined
 
 -- currG = gScore M.! curr
 -- Manheatten distance

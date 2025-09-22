@@ -5,6 +5,7 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Redundant if" #-}
+{-# HLINT ignore "Move guards forward" #-}
 
 module Day12 (day12) where
 
@@ -19,10 +20,8 @@ import qualified Data.Vector as V
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 
 data Maze = Maze (V.Vector (V.Vector Int)) Int Int deriving (Show, Eq)
-data MazeBool where
-  MazeBool :: (V.Vector (V.Vector Bool)) -> MazeBool
-  deriving (Show, Eq)
 
+type MazeBool = V.Vector (V.Vector Bool)
 
 fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
@@ -53,6 +52,9 @@ checkEnd = findIndex $ \s -> s == 'E'
 elevationAt :: Maze -> MazeCoord -> Int
 elevationAt (Maze grid _ _) (MazeCoord r c) = (grid V.! r) V.! c
 
+visitedCheck :: MazeBool -> MazeCoord -> Bool
+visitedCheck grid (MazeCoord r c) = (grid V.! r) V.! c
+
 findStartEnd ::
     [String] -> Int -> Maybe MazeCoord -> Maybe MazeCoord -> Maybe (MazeCoord, MazeCoord)
 findStartEnd [] rowIdx Nothing _ = error "Should be impossible in this task"
@@ -74,24 +76,24 @@ letter2elevation 'S' = ord 'a' - ord 'a'
 letter2elevation 'E' = ord 'z' - ord 'a'
 letter2elevation c = ord c - ord 'a'
 
-neighbours :: MazeCoord -> Maze -> MazeBool -> [MazeCoord]
-neighbours (MazeCoord x y)  (Maze maze maxRows maxColumns) (MazeBool mzbool) =
+neighbours :: MazeCoord -> Maze -> [MazeCoord]
+neighbours (MazeCoord row col) (Maze maze maxRows maxColumns) =
     let
         a =
-            if (x + 1) < maxColumns && not ((mzbool V.! (x + 1)) V.! y)
-                then Just $ MazeCoord (x + 1) y
+            if (col + 1) < maxColumns
+                then Just $ MazeCoord row (col + 1)
                 else Nothing
         b =
-            if (x - 1) >= 0 && not ((mzbool V.! (x - 1)) V.! y)
-                then Just $ MazeCoord (x - 1) y
+            if (col - 1) >= 0
+                then Just $ MazeCoord row (col - 1)
                 else Nothing
         c =
-            if (y + 1) < maxRows && not ((mzbool V.! x) V.! (y + 1))
-                then Just $ MazeCoord x (y + 1)
+            if (row + 1) < maxRows
+                then Just $ MazeCoord (row + 1) col
                 else Nothing
         d =
-            if (y - 1) >= 0 && not ((mzbool V.! x) V.! (y - 1))
-                then Just $ MazeCoord x (y - 1)
+            if (row - 1) >= 0
+                then Just $ MazeCoord (row - 1) col
                 else Nothing
     in
         fromJust . sequence $ filter isJust [a, b, c, d]
@@ -99,7 +101,9 @@ neighbours (MazeCoord x y)  (Maze maze maxRows maxColumns) (MazeBool mzbool) =
 neighborsClimbOK :: Maze -> MazeBool -> MazeCoord -> [MazeCoord]
 neighborsClimbOK maze mazeBool coord =
     let currentElevation = elevationAt maze coord
-    in  filter (\v -> elevationAt maze v <= currentElevation + 1) (neighbours coord maze mazeBool)
+    in  filter
+            (\v -> (elevationAt maze v <= currentElevation + 1) && not (visitedCheck mazeBool v))
+            (neighbours coord maze)
 
 manhattanDistance ::
     -- current coordinate
@@ -107,7 +111,12 @@ manhattanDistance ::
     -- desired end coordinate
     MazeCoord ->
     (Int, MazeCoord)
-manhattanDistance currCoord@(MazeCoord x1 y1) (MazeCoord xEnd yEnd) = (abs (xEnd - x1) + abs (yEnd - y1),  currCoord)
+manhattanDistance currCoord@(MazeCoord x1 y1) (MazeCoord xEnd yEnd) = (abs (xEnd - x1) + abs (yEnd - y1), currCoord)
+
+-- Update visited status in MazeBool. This looks bad, but it's how it's done in Vector
+setVisited :: MazeBool -> MazeCoord -> MazeBool
+setVisited mazeBool (MazeCoord r c) =
+    mazeBool V.// [(r, (mazeBool V.! r) V.// [(c, True)])]
 
 aStar ::
     -- start node
@@ -116,44 +125,65 @@ aStar ::
     MazeCoord ->
     -- Maze
     Maze ->
-    -- return path
-    Maybe MazeCoord
-aStar startNode endNode maze = aStar' endNode (PQ.singleton (0, startNode)) maze (MazeBool $ V.replicate 3 (V.replicate 2 False))
+    -- return path length
+    Maybe Int
+aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
+    let initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
+        -- Start with f-score = heuristic distance
+        initialFScore = abs (row2 - row1) + abs (col2 - col1)
+          where
+            MazeCoord row1 col1 = startNode
+            MazeCoord row2 col2 = endNode
+    in  aStar' (PQ.singleton (initialFScore, 0, startNode)) initialMazeBool M.empty
   where
     aStar' ::
-        -- end node
-        MazeCoord ->
-        -- priority queue of nodes
-        PQ.MinQueue (Int, MazeCoord) ->
-        -- maze
-        Maze ->
+        -- priority queue of nodes: (f-score, g-score, node)
+        PQ.MinQueue (Int, Int, MazeCoord) ->
         -- needed to check in O(1) if node was visited
         MazeBool ->
-        -- return path
-        Maybe MazeCoord
-    aStar' nd2@(MazeCoord xEnd yEnd) pqNodes maze mazeBool
-        -- | PQ.null pqNodes = Nothing
-        | currNode == nd2 = Just nd2
-        | currNode /= nd2 =
+        -- g-scores (actual distances from start)
+        M.Map MazeCoord Int ->
+        -- return path length
+        Maybe Int
+    aStar' pqNodes mazeBool gScores
+        | PQ.null pqNodes = Nothing
+        | currNode == endNode = Just currG
+        -- probably need to use decrease key for repeated nodes. But I don't know how to do it in haskell right now
+        | visitedCheck mazeBool currNode = aStar' pqNodesRest mazeBool gScores
+        | otherwise =
             let
-                --neighboursFd :: [(Int, MazeCoord)] = map (`manhattanDistance` nd2) $ neighbours nd2 maze
-                neighboursFd :: [(Int, MazeCoord)] = map (flip manhattanDistance nd2) $ neighborsClimbOK maze mazeBool currNode
-                pqNodesCurr = foldl' (flip PQ.insert) pqNodesCurr neighboursFd
-            in   aStar' nd2 pqNodes maze mazeBool
-        where
-            ((cost, currNode), pqNodesCurr) = PQ.deleteFindMin pqNodes
-            --pqNodesNext = undefined
-
--- currG = gScore M.! curr
--- Manheatten distance
+                -- Mark current node as visited
+                newMazeBool = setVisited mazeBool currNode
+                -- Update g-scores
+                newGScores = M.insert currNode currG gScores
+                -- Get valid neighbors
+                validNeighbors = neighborsClimbOK maze newMazeBool currNode
+                -- Calculate scores for each neighbor
+                neighborScores =
+                    [ (gScore, hScore, n) | n <- validNeighbors,
+                        let gScore = currG + 1,
+                        let MazeCoord r1 c1 = n,
+                        let MazeCoord r2 c2 = endNode,
+                        let hScore = abs (r2 - r1) + abs (c2 - c1),
+                        -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
+                        M.notMember n gScores || gScore < gScores M.! n
+                    ]
+                -- Add neighbors to priority queue with f-score = g-score + h-score
+                newPQ = foldl' (\pq (g, h, n) -> PQ.insert (g + h, g, n) pq) pqNodesRest neighborScores
+            in
+                aStar' newPQ newMazeBool newGScores
+      where
+        ((currF, currG, currNode), pqNodesRest) = PQ.deleteFindMin pqNodes
 
 day12 :: IO ()
 day12 = do
     txt <- readFile "task_12.txt"
     (indexes, maze) <- return . parse $ txt
     indexes <- return . fromJust $ indexes
-    print maze
-    let mp = getMap maze
-    let (maxR, maxC) = getMaxCoord maze
-    print $ (mp V.! (maxR - 1)) V.! (maxC - 1)
-    print indexes
+    let (start, end) = indexes
+    print $ "Start: " ++ show start
+    print $ "End: " ++ show end
+
+    case aStar start end maze of
+        Nothing -> putStrLn "No path found"
+        Just pathLength -> putStrLn $ "Part 1: " ++ show pathLength

@@ -110,8 +110,8 @@ manhattanDistance ::
     MazeCoord ->
     -- desired end coordinate
     MazeCoord ->
-    (Int, MazeCoord)
-manhattanDistance currCoord@(MazeCoord x1 y1) (MazeCoord xEnd yEnd) = (abs (xEnd - x1) + abs (yEnd - y1), currCoord)
+    Int
+manhattanDistance currCoord@(MazeCoord x1 y1) (MazeCoord xEnd yEnd) = abs (xEnd - x1) + abs (yEnd - y1)
 
 -- Update visited status in MazeBool. This looks bad, but it's how it's done in Vector
 setVisited :: MazeBool -> MazeCoord -> MazeBool
@@ -130,10 +130,7 @@ aStar ::
 aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
     let initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
         -- Start with f-score = heuristic distance
-        initialFScore = abs (row2 - row1) + abs (col2 - col1)
-          where
-            MazeCoord row1 col1 = startNode
-            MazeCoord row2 col2 = endNode
+        initialFScore = manhattanDistance startNode endNode
     in  aStar' (PQ.singleton (initialFScore, 0, startNode)) initialMazeBool M.empty
   where
     aStar' ::
@@ -160,13 +157,11 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
                 validNeighbors = neighborsClimbOK maze newMazeBool currNode
                 -- Calculate scores for each neighbor
                 neighborScores =
-                    [ (gScore, hScore, n) | n <- validNeighbors,
+                    [ (gScore, hScore, node) | node <- validNeighbors,
                         let gScore = currG + 1,
-                        let MazeCoord r1 c1 = n,
-                        let MazeCoord r2 c2 = endNode,
-                        let hScore = abs (r2 - r1) + abs (c2 - c1),
+                        let hScore = manhattanDistance node endNode,
                         -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
-                        M.notMember n gScores || gScore < gScores M.! n
+                        M.notMember node gScores || gScore < gScores M.! node
                     ]
                 -- Add neighbors to priority queue with f-score = g-score + h-score
                 newPQ = foldl' (\pq (g, h, n) -> PQ.insert (g + h, g, n) pq) pqNodesRest neighborScores

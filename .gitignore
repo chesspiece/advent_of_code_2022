@@ -2,3 +2,6 @@ dist-newstyle
 *.txt
 .vscode/
 tags
+lock
+result
+flake.lock

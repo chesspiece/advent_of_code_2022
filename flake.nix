@@ -34,8 +34,13 @@
             ];
 
             # Common native deps people often need; tweak for your libs
-            # nativeBuildInputs = with pkgs; [ pkg-config ];
-            # buildInputs = with pkgs; [
+            nativeBuildInputs = with pkgs; [
+              pkg-config
+              bash
+              zsh
+              fish
+            ];
+            #buildInputs = with pkgs; [
             #   # zlib
             #   # openssl
             #   # sqlite

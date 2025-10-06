@@ -1,18 +1,13 @@
 {
-	"name": "Ubuntu",
-	"image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
-	"features": {
-		"ghcr.io/devcontainers-extra/features/haskell:2": {
-			"installHLS": true,
-			"downgradeGhcToSupportHls": false,
-			"adjustBash": true,
-			"ghcVersion": "9.6.7",
-			"cabalVersion": "3.12.1.0",
-			"globalPackages": "hlint fourmolu ghci-dap haskell-debug-adapter",
-			"globalLibraries": "",
-			"installStack": false
-		}
-	},
+	"name": "Debian",
+	"build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+          "GHC_VERSION": "9.6.7",
+          "CABAL_VERSION": "3.12.1.0",
+          "HLS_VERSION": "2.10.0.0"
+        }
+    },
 	"customizations": {
     "vscode": {
       "extensions": [

@@ -13,7 +13,7 @@ import Control.Monad.Trans (lift)
 import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices, foldl')
 import qualified Data.Map.Strict as M
-import Data.Maybe (fromJust, isJust)
+import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import qualified Data.PQueue.Min as PQ
 import qualified Data.Vector as V
 
@@ -22,6 +22,7 @@ data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 data Maze = Maze (V.Vector (V.Vector Int)) Int Int deriving (Show, Eq)
 
 type MazeBool = V.Vector (V.Vector Bool)
+type MazeGscore = V.Vector (V.Vector (Maybe Int))
 
 fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
@@ -51,6 +52,9 @@ checkEnd = findIndex $ \s -> s == 'E'
 
 elevationAt :: Maze -> MazeCoord -> Int
 elevationAt (Maze grid _ _) (MazeCoord r c) = (grid V.! r) V.! c
+
+gScoreAt :: MazeGscore -> MazeCoord -> Maybe Int
+gScoreAt grid (MazeCoord r c) = (grid V.! r) V.! c
 
 visitedCheck :: MazeBool -> MazeCoord -> Bool
 visitedCheck grid (MazeCoord r c) = (grid V.! r) V.! c
@@ -118,6 +122,10 @@ setVisited :: MazeBool -> MazeCoord -> MazeBool
 setVisited mazeBool (MazeCoord r c) =
     mazeBool V.// [(r, (mazeBool V.! r) V.// [(c, True)])]
 
+setGScore :: MazeGscore -> MazeCoord -> Int -> MazeGscore
+setGScore grid (MazeCoord r c) score =
+    grid V.// [(r, (grid V.! r) V.// [(c, Just score)])]
+
 aStar ::
     -- start node
     MazeCoord ->
@@ -131,7 +139,8 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
     let initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
         -- Start with f-score = heuristic distance
         initialFScore = manhattanDistance startNode endNode
-    in  aStar' (PQ.singleton (initialFScore, 0, startNode)) initialMazeBool M.empty
+        initialGscore = V.replicate maxRows (V.replicate maxColumns Nothing)
+    in  aStar' (PQ.singleton (initialFScore, 0, startNode)) initialMazeBool initialGscore
   where
     aStar' ::
         -- priority queue of nodes: (f-score, g-score, node)
@@ -139,7 +148,7 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
         -- needed to check in O(1) if node was visited
         MazeBool ->
         -- g-scores (actual distances from start)
-        M.Map MazeCoord Int ->
+        MazeGscore ->
         -- return path length
         Maybe Int
     aStar' pqNodes mazeBool gScores
@@ -152,7 +161,7 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
                 -- Mark current node as visited
                 newMazeBool = setVisited mazeBool currNode
                 -- Update g-scores
-                newGScores = M.insert currNode currG gScores
+                newGScores = setGScore gScores currNode currG
                 -- Get valid neighbors
                 validNeighbors = neighborsClimbOK maze newMazeBool currNode
                 -- Calculate scores for each neighbor
@@ -161,7 +170,7 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
                         let gScore = currG + 1,
                         let hScore = manhattanDistance node endNode,
                         -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
-                        M.notMember node gScores || gScore < gScores M.! node
+                        isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
                     ]
                 -- Add neighbors to priority queue with f-score = g-score + h-score
                 newPQ = foldl' (\pq (g, h, n) -> PQ.insert (g + h, g, n) pq) pqNodesRest neighborScores

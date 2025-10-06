@@ -125,6 +125,7 @@
           default = project96;
 
           # Docker/OCI images
+          # tasks inputs are not included in docker image
           dockerImage-ghc94 = image94;
           dockerImage-ghc96 = image96;
           dockerImage-ghc98 = image98;

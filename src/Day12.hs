@@ -14,8 +14,8 @@ import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices, foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
-import qualified Data.PQueue.Min as PQ
 import qualified Data.Vector as V
+import qualified Data.PSQueue as PSQ
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 
@@ -36,12 +36,17 @@ getMaxCoord (Maze _ maxRow maxColumn) = (maxRow, maxColumn)
 
 parse :: String -> (Maybe (MazeCoord, MazeCoord), Maze)
 parse inputText =
-    let inputMatrixStr = lines inputText
+    let
+        inputMatrixStr = lines inputText
         startEndIndexes = findStartEnd inputMatrixStr 0 Nothing Nothing
         numRows = length inputMatrixStr
         numColumns = length $ head inputMatrixStr
-    in  ( startEndIndexes
-        , Maze (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr) numRows numColumns
+    in
+        ( startEndIndexes
+        , Maze
+            (V.fromList $ map (V.fromList . map letter2elevation) inputMatrixStr)
+            numRows
+            numColumns
         )
 
 checkStart :: [Char] -> Maybe Int
@@ -60,14 +65,20 @@ visitedCheck :: MazeBool -> MazeCoord -> Bool
 visitedCheck grid (MazeCoord r c) = (grid V.! r) V.! c
 
 findStartEnd ::
-    [String] -> Int -> Maybe MazeCoord -> Maybe MazeCoord -> Maybe (MazeCoord, MazeCoord)
+    [String] ->
+    Int ->
+    Maybe MazeCoord ->
+    Maybe MazeCoord ->
+    Maybe (MazeCoord, MazeCoord)
 findStartEnd [] rowIdx Nothing _ = error "Should be impossible in this task"
 findStartEnd [] rowIdx _ Nothing = error "Should be impossible in this task"
 findStartEnd text rowIdx (Just startIdx) (Just endIdx) = Just (startIdx, endIdx)
 findStartEnd (row : nextRows) rowIdx Nothing Nothing =
-    let startIdx = fromList <$> sequence [Just rowIdx, checkStart row]
+    let
+        startIdx = fromList <$> sequence [Just rowIdx, checkStart row]
         endIdx = fromList <$> sequence [Just rowIdx, checkEnd row]
-    in  findStartEnd nextRows (rowIdx + 1) startIdx endIdx
+    in
+        findStartEnd nextRows (rowIdx + 1) startIdx endIdx
 findStartEnd (row : nextRows) rowIdx (Just startIdx) Nothing =
     let endIdx = fromList <$> sequence [Just rowIdx, checkEnd row]
     in  findStartEnd nextRows (rowIdx + 1) (Just startIdx) endIdx
@@ -106,7 +117,9 @@ neighborsClimbOK :: Maze -> MazeBool -> MazeCoord -> [MazeCoord]
 neighborsClimbOK maze mazeBool coord =
     let currentElevation = elevationAt maze coord
     in  filter
-            (\v -> (elevationAt maze v <= currentElevation + 1) && not (visitedCheck mazeBool v))
+            ( \v ->
+                (elevationAt maze v <= currentElevation + 1) && not (visitedCheck mazeBool v)
+            )
             (neighbours coord maze)
 
 manhattanDistance ::
@@ -136,15 +149,20 @@ aStar ::
     -- return path length
     Maybe Int
 aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
-    let initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
+    let
+        initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
         -- Start with f-score = heuristic distance
         initialFScore = manhattanDistance startNode endNode
         initialGscore = V.replicate maxRows (V.replicate maxColumns Nothing)
-    in  aStar' (PQ.singleton (initialFScore, 0, startNode)) initialMazeBool initialGscore
+    in
+        aStar'
+            (PSQ.singleton (0, startNode) initialFScore)
+            initialMazeBool
+            initialGscore
   where
     aStar' ::
         -- priority queue of nodes: (f-score, g-score, node)
-        PQ.MinQueue (Int, Int, MazeCoord) ->
+        PSQ.PSQ (Int, MazeCoord) Int ->
         -- needed to check in O(1) if node was visited
         MazeBool ->
         -- g-scores (actual distances from start)
@@ -152,7 +170,7 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
         -- return path length
         Maybe Int
     aStar' pqNodes mazeBool gScores
-        | PQ.null pqNodes = Nothing
+        | PSQ.null pqNodes = Nothing
         | currNode == endNode = Just currG
         -- probably need to use decrease key for repeated nodes. But I don't know how to do it in haskell right now
         | visitedCheck mazeBool currNode = aStar' pqNodesRest mazeBool gScores
@@ -166,18 +184,18 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
                 validNeighbors = neighborsClimbOK maze newMazeBool currNode
                 -- Calculate scores for each neighbor
                 neighborScores =
-                    [ (gScore, hScore, node) | node <- validNeighbors,
-                        let gScore = currG + 1,
-                        let hScore = manhattanDistance node endNode,
-                        -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
-                        isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
+                    [ (gScore, hScore, node) | node <- validNeighbors, let gScore = currG + 1, let hScore = manhattanDistance node endNode,
+                    -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
+                    isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
                     ]
                 -- Add neighbors to priority queue with f-score = g-score + h-score
-                newPQ = foldl' (\pq (g, h, n) -> PQ.insert (g + h, g, n) pq) pqNodesRest neighborScores
+                newPQ =
+                    foldl' (\pq (g, h, n) -> PSQ.insert (g, n) (g + h) pq) pqNodesRest neighborScores
             in
                 aStar' newPQ newMazeBool newGScores
       where
-        ((currF, currG, currNode), pqNodesRest) = PQ.deleteFindMin pqNodes
+        (currG, currNode)  = PSQ.key  . fromJust $ PSQ.findMin pqNodes
+        pqNodesRest = PSQ.deleteMin pqNodes
 
 day12 :: IO ()
 day12 = do

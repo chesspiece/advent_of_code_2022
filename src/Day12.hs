@@ -184,13 +184,16 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
                 validNeighbors = neighborsClimbOK maze newMazeBool currNode
                 -- Calculate scores for each neighbor
                 neighborScores =
-                    [ (gScore, hScore, node) | node <- validNeighbors, let gScore = currG + 1, let hScore = manhattanDistance node endNode,
+                    [ (gScore, hScore, node, isEmpty) | node <- validNeighbors,
+                    let gScore = currG + 1,
+                    let hScore = manhattanDistance node endNode,
+                    let isEmpty = isNothing (gScoreAt gScores node),
                     -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
                     isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
                     ]
                 -- Add neighbors to priority queue with f-score = g-score + h-score
                 newPQ =
-                    foldl' (\pq (g, h, n) -> PSQ.insert (g, n) (g + h) pq) pqNodesRest neighborScores
+                    foldl' (\pq (g, h, n, isEmpty) -> PSQ.insert (g, n) (g + h) pq) pqNodesRest neighborScores
             in
                 aStar' newPQ newMazeBool newGScores
       where

@@ -14,8 +14,8 @@ import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices, foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
-import qualified Data.Vector as V
 import qualified Data.PSQueue as PSQ
+import qualified Data.Vector as V
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 
@@ -153,16 +153,16 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
         initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
         -- Start with f-score = heuristic distance
         initialFScore = manhattanDistance startNode endNode
-        initialGscore = V.replicate maxRows (V.replicate maxColumns Nothing)
+        initialGscore =  setGScore (V.replicate maxRows (V.replicate maxColumns Nothing)) startNode 0
     in
         aStar'
-            (PSQ.singleton (0, startNode) initialFScore)
+            (PSQ.singleton startNode initialFScore)
             initialMazeBool
             initialGscore
   where
     aStar' ::
-        -- priority queue of nodes: (f-score, g-score, node)
-        PSQ.PSQ (Int, MazeCoord) Int ->
+        -- priority queue of nodes: (node) with priority of gscore+fscore
+        PSQ.PSQ MazeCoord Int ->
         -- needed to check in O(1) if node was visited
         MazeBool ->
         -- g-scores (actual distances from start)
@@ -173,31 +173,37 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
         | PSQ.null pqNodes = Nothing
         | currNode == endNode = Just currG
         -- probably need to use decrease key for repeated nodes. But I don't know how to do it in haskell right now
-        | visitedCheck mazeBool currNode = aStar' pqNodesRest mazeBool gScores
+        -- | visitedCheck mazeBool currNode = aStar' pqNodesRest mazeBool gScores
         | otherwise =
             let
                 -- Mark current node as visited
                 newMazeBool = setVisited mazeBool currNode
                 -- Update g-scores
-                newGScores = setGScore gScores currNode currG
-                -- Get valid neighbors
                 validNeighbors = neighborsClimbOK maze newMazeBool currNode
                 -- Calculate scores for each neighbor
                 neighborScores =
                     [ (gScore, hScore, node, isEmpty) | node <- validNeighbors,
-                    let gScore = currG + 1,
-                    let hScore = manhattanDistance node endNode,
-                    let isEmpty = isNothing (gScoreAt gScores node),
-                    -- should do decrease key for nodes with gScore < gScores M.! n. But don't know how for now.
-                    isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
+                        let gScore = currG + 1,
+                        let hScore = manhattanDistance node endNode,
+                        let isEmpty = isNothing (gScoreAt gScores node),
+                        isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
                     ]
+                -- Get valid neighbors
+                newGScores = foldl' (\inGscore (g, _, n, _) -> setGScore inGscore n g) gScores neighborScores
                 -- Add neighbors to priority queue with f-score = g-score + h-score
                 newPQ =
-                    foldl' (\pq (g, h, n, isEmpty) -> PSQ.insert (g, n) (g + h) pq) pqNodesRest neighborScores
+                    foldl'
+                        ( \pq (g, h, n, isEmpty) ->
+                            if isEmpty then PSQ.insert n (g + h) pq
+                            else PSQ.update (\p -> Just $ g + h) n pq
+                        )
+                        pqNodesRest
+                        neighborScores
             in
                 aStar' newPQ newMazeBool newGScores
       where
-        (currG, currNode)  = PSQ.key  . fromJust $ PSQ.findMin pqNodes
+        currNode = PSQ.key . fromJust $ PSQ.findMin pqNodes
+        currG = fromJust $ gScoreAt gScores currNode
         pqNodesRest = PSQ.deleteMin pqNodes
 
 day12 :: IO ()

@@ -16,6 +16,8 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import qualified Data.PSQueue as PSQ
 import qualified Data.Vector as V
+import Control.Parallel.Strategies (parMap, rdeepseq )
+import System.CPUTime (getCPUTime)
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 
@@ -216,14 +218,16 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
 
 day12 :: IO ()
 day12 = do
-    txt <- readFile "task12_test.txt"
+    txt <- readFile "task_12.txt"
     (indexes, maze) <- return . parse $ txt
     indexes <- return . fromJust $ indexes
     let (start, possibleStarts, end) = indexes
-    print $ "Start: " ++ show start
-    print $ "End: " ++ show end
-    print $ "Part 2 starts: " ++ show possibleStarts
 
     case aStar start end maze of
         Nothing -> putStrLn "No path found"
         Just pathLength -> putStrLn $ "Part 1: " ++ show pathLength
+    startTime <- getCPUTime
+    let res2 = sequence . filter isJust $ parMap rdeepseq (\start -> aStar start end maze) possibleStarts
+    endTime <- getCPUTime
+    putStrLn $ "Part 2: " ++ show (fmap minimum res2)
+    putStrLn $ "Evaluation time of part 2 A*: " ++ show (fromIntegral (endTime - startTime) / 1e12)

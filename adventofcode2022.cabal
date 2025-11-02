@@ -75,6 +75,7 @@ library
         , hashtables
         , pqueue
         , PSQueue
+        , parallel
 
     default-language: Haskell2010
 

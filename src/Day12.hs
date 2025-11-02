@@ -2,6 +2,7 @@
 {-# HLINT ignore "Use gets" #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Redundant if" #-}
@@ -16,7 +17,7 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import qualified Data.PSQueue as PSQ
 import qualified Data.Vector as V
-import Control.Parallel.Strategies (parMap, rdeepseq )
+-- import Control.Parallel.Strategies (parMap, rdeepseq)
 import System.CPUTime (getCPUTime)
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
@@ -231,7 +232,13 @@ day12 = do
         Nothing -> putStrLn "No path found"
         Just pathLength -> putStrLn $ "Part 1: " ++ show pathLength
     startTime <- getCPUTime
-    let res2 = sequence . filter isJust $ parMap rdeepseq (\start -> aStar start end maze) possibleStarts
+    -- Grid is too small. Because of the verhead actual time is worse with parMap compared to map
+    --let res2 = sequence . filter isJust $ parMap rdeepseq (\start -> aStar start end maze) possibleStarts
+
+    let res2 = sequence . filter isJust $ map (\s -> aStar s end maze)  possibleStarts
+    -- the bang `!r` forces each result as we build the list
+    -- Left here as example of bang patterns
+    -- For some reason make programm faster if threaded is enabled, but no improvement without -threaded
+    -- let dists = map (\s -> let !r = aStar s end maze in r) possibleStarts
     endTime <- getCPUTime
-    putStrLn $ "Part 2: " ++ show (fmap minimum res2)
     putStrLn $ "Evaluation time of part 2 A*: " ++ show (fromIntegral (endTime - startTime) / 1e12)

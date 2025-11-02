@@ -195,7 +195,11 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
                 validNeighbors = neighborsClimbOK maze newMazeBool currNode
                 -- Calculate scores for each neighbor
                 neighborScores =
-                    [ (gScore, hScore, node, isEmpty) | node <- validNeighbors, let gScore = currG + 1, let hScore = manhattanDistance node endNode, let isEmpty = isNothing (gScoreAt gScores node), isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
+                    [ (gScore, hScore, node, isEmpty) | node <- validNeighbors,
+                        let gScore = currG + 1,
+                        let hScore = manhattanDistance node endNode,
+                        let isEmpty = isNothing (gScoreAt gScores node),
+                        isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
                     ]
                 -- Get valid neighbors
                 newGScores = foldl' (\inGscore (g, _, n, _) -> setGScore inGscore n g) gScores neighborScores

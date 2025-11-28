@@ -3,8 +3,8 @@
 
   inputs = {
     # Pick a channel you like (stable shown). You can switch to "nixpkgs-unstable" if you prefer.
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
-    #nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -17,7 +17,22 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        pkgs = import nixpkgs { inherit system; };
+        #haskellOverlay = final: prev: {
+        #  haskellPackages = prev.haskellPackages.override (old: {
+        #    overrides = hfinal: hprev: {
+        #      # 1. Mark 'Stack' (capital S) as unbroken
+        #      # 2. Apply doJailbreak to relax version bounds (highly recommended for old pkgs)
+        #      Stack = prev.haskell.lib.doJailbreak (
+        #        prev.haskell.lib.markUnbroken hprev.Stack
+        #      );
+        #    };
+        #  });
+        #};
+        pkgs = import nixpkgs {
+            inherit system;
+            #overlays = [haskellOverlay];
+            config.allowBroken = true;
+        };
         exeName = "adventofcode2022";
 
         # Helper: build a dev shell for a given haskell package set (i.e., a specific GHC)

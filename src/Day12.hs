@@ -1,8 +1,8 @@
+{-# LANGUAGE BangPatterns #-}
 {-# HLINT ignore "Use <&>" #-}
 {-# HLINT ignore "Use gets" #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE BangPatterns #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Redundant if" #-}
@@ -10,6 +10,7 @@
 
 module Day12 (day12) where
 
+import Control.Monad (filterM)
 import Control.Monad.Trans (lift)
 import Data.Char (isAsciiLower, ord)
 import Data.List (findIndex, findIndices, foldl')
@@ -17,15 +18,17 @@ import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import qualified Data.PSQueue as PSQ
 import qualified Data.Vector as V
+
 -- import Control.Parallel.Strategies (parMap, rdeepseq)
+
+import Control.Monad.ST (ST, runST)
+import Data.Array.MArray (MArray)
+import Data.Array.ST (STArray, STUArray, newArray, readArray, writeArray)
 import System.CPUTime (getCPUTime)
 
 data MazeCoord = MazeCoord Int Int deriving (Show, Eq, Ord)
 
 data Maze = Maze (V.Vector (V.Vector Int)) Int Int deriving (Show, Eq)
-
-type MazeBool = V.Vector (V.Vector Bool)
-type MazeGscore = V.Vector (V.Vector (Maybe Int))
 
 fromList :: [Int] -> MazeCoord
 fromList [x, y] = MazeCoord x y
@@ -61,11 +64,11 @@ checkEnd = findIndex $ \s -> s == 'E'
 elevationAt :: Maze -> MazeCoord -> Int
 elevationAt (Maze grid _ _) (MazeCoord r c) = (grid V.! r) V.! c
 
-gScoreAt :: MazeGscore -> MazeCoord -> Maybe Int
-gScoreAt grid (MazeCoord r c) = (grid V.! r) V.! c
+gScoreAt :: STArray s (Int, Int) (Maybe Int) -> MazeCoord -> ST s (Maybe Int)
+gScoreAt grid (MazeCoord r c) = readArray grid (r, c)
 
-visitedCheck :: MazeBool -> MazeCoord -> Bool
-visitedCheck grid (MazeCoord r c) = (grid V.! r) V.! c
+visitedCheck :: STUArray s (Int, Int) Bool -> MazeCoord -> ST s Bool
+visitedCheck grid (MazeCoord r c) = readArray grid (r, c)
 
 findStartEnd ::
     [String] ->
@@ -74,7 +77,7 @@ findStartEnd ::
     [MazeCoord] ->
     Maybe MazeCoord ->
     Maybe (MazeCoord, [MazeCoord], MazeCoord)
-findStartEnd [] _ (Just startIdx) possibleStarts (Just endIdx) = Just (startIdx, startIdx:possibleStarts, endIdx)
+findStartEnd [] _ (Just startIdx) possibleStarts (Just endIdx) = Just (startIdx, startIdx : possibleStarts, endIdx)
 findStartEnd [] _ Nothing _ _ = error "Should be impossible in this task"
 findStartEnd [] _ _ _ Nothing = error "Should be impossible in this task"
 findStartEnd (row : nextRows) rowIdx Nothing possibleStarts Nothing =
@@ -127,14 +130,14 @@ neighbours (MazeCoord row col) (Maze maze maxRows maxColumns) =
     in
         fromJust . sequence $ filter isJust [a, b, c, d]
 
-neighborsClimbOK :: Maze -> MazeBool -> MazeCoord -> [MazeCoord]
+neighborsClimbOK :: Maze -> STUArray s (Int, Int) Bool -> MazeCoord -> ST s [MazeCoord]
 neighborsClimbOK maze mazeBool coord =
-    let currentElevation = elevationAt maze coord
-    in  filter
-            ( \v ->
-                (elevationAt maze v <= currentElevation + 1) && not (visitedCheck mazeBool v)
-            )
-            (neighbours coord maze)
+    filterM
+        ( \v -> do
+            isVisited <- visitedCheck mazeBool v
+            return $ (elevationAt maze v <= elevationAt maze coord + 1) && not isVisited
+        )
+        $ neighbours coord maze
 
 manhattanDistance ::
     -- current coordinate
@@ -144,14 +147,15 @@ manhattanDistance ::
     Int
 manhattanDistance currCoord@(MazeCoord x1 y1) (MazeCoord xEnd yEnd) = abs (xEnd - x1) + abs (yEnd - y1)
 
--- Update visited status in MazeBool. This looks bad, but it's how it's done in Vector
-setVisited :: MazeBool -> MazeCoord -> MazeBool
+-- Update visited status in O(1)
+setVisited :: STUArray s (Int, Int) Bool -> MazeCoord -> ST s ()
 setVisited mazeBool (MazeCoord r c) =
-    mazeBool V.// [(r, (mazeBool V.! r) V.// [(c, True)])]
+    writeArray mazeBool (r, c) True
 
-setGScore :: MazeGscore -> MazeCoord -> Int -> MazeGscore
+-- Update gscores in O(1)
+setGScore :: STArray s (Int, Int) (Maybe Int) -> MazeCoord -> Int -> ST s ()
 setGScore grid (MazeCoord r c) score =
-    grid V.// [(r, (grid V.! r) V.// [(c, Just score)])]
+    writeArray grid (r, c) (Just score)
 
 aStar ::
     -- start node
@@ -162,64 +166,73 @@ aStar ::
     Maze ->
     -- return path length
     Maybe Int
-aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
-    let
-        initialMazeBool = V.replicate maxRows (V.replicate maxColumns False)
-        -- Start with f-score = heuristic distance
-        initialFScore = manhattanDistance startNode endNode
-        initialGscore = setGScore (V.replicate maxRows (V.replicate maxColumns Nothing)) startNode 0
-    in
-        aStar'
-            (PSQ.singleton startNode initialFScore)
-            initialMazeBool
-            initialGscore
+aStar startNode endNode maze@(Maze _ maxRows maxColumns) = runST $ do
+    mazeBool <-
+        newArray ((0, 0), (maxRows - 1, maxColumns - 1)) False :: ST s (STUArray s (Int, Int) Bool)
+    gScores <-
+        newArray ((0, 0), (maxRows - 1, maxColumns - 1)) Nothing :: ST s (STArray s (Int, Int) (Maybe Int))
+
+    setGScore gScores startNode 0
+
+    -- Initial f-score
+    let initialFScore = manhattanDistance startNode endNode
+
+    aStar' (PSQ.singleton startNode initialFScore) mazeBool gScores
   where
     aStar' ::
-        -- priority queue of nodes: (node) with priority of gscore+fscore
+        -- priority queue of nodes with priority of gscore+fscore
         PSQ.PSQ MazeCoord Int ->
-        -- needed to check in O(1) if node was visited
-        MazeBool ->
-        -- g-scores (actual distances from start)
-        MazeGscore ->
+        -- visited nodes bool array
+        STUArray s (Int, Int) Bool ->
+        -- g-scores
+        STArray s (Int, Int) (Maybe Int) ->
         -- return path length
-        Maybe Int
+        ST s (Maybe Int)
     aStar' pqNodes mazeBool gScores
-        | PSQ.null pqNodes = Nothing
-        | currNode == endNode = Just currG
-        -- probably need to use decrease key for repeated nodes. But I don't know how to do it in haskell right now
-        -- \| visitedCheck mazeBool currNode = aStar' pqNodesRest mazeBool gScores
-        | otherwise =
-            let
-                -- Mark current node as visited
-                newMazeBool = setVisited mazeBool currNode
-                -- Update g-scores
-                validNeighbors = neighborsClimbOK maze newMazeBool currNode
-                -- Calculate scores for each neighbor
-                neighborScores =
-                    [ (gScore, hScore, node, isEmpty) | node <- validNeighbors,
-                        let gScore = currG + 1,
-                        let hScore = manhattanDistance node endNode,
-                        let isEmpty = isNothing (gScoreAt gScores node),
-                        isNothing (gScoreAt gScores node) || gScore < fromJust (gScoreAt gScores node)
-                    ]
-                -- Get valid neighbors
-                newGScores = foldl' (\inGscore (g, _, n, _) -> setGScore inGscore n g) gScores neighborScores
-                -- Add neighbors to priority queue with f-score = g-score + h-score
-                newPQ =
-                    foldl'
-                        ( \pq (g, h, n, isEmpty) ->
-                            if isEmpty
-                                then PSQ.insert n (g + h) pq
-                                else PSQ.update (\p -> Just $ g + h) n pq
-                        )
-                        pqNodesRest
-                        neighborScores
-            in
-                aStar' newPQ newMazeBool newGScores
-      where
-        currNode = PSQ.key . fromJust $ PSQ.findMin pqNodes
-        currG = fromJust $ gScoreAt gScores currNode
-        pqNodesRest = PSQ.deleteMin pqNodes
+        | PSQ.null pqNodes = return Nothing
+        | otherwise = do
+            let currNode = PSQ.key . fromJust $ PSQ.findMin pqNodes
+            let pqNodesRest = PSQ.deleteMin pqNodes
+
+            currGMaybe <- gScoreAt gScores currNode
+            let currG = fromJust currGMaybe
+
+            if currNode == endNode
+                then return $ Just currG
+                else do
+                    setVisited mazeBool currNode
+                    validNeighbors <- neighborsClimbOK maze mazeBool currNode
+
+                    neighborScores <-
+                        mapM
+                            ( \node -> do
+                                let gScore = currG + 1
+                                let hScore = manhattanDistance node endNode
+                                oldGScore <- gScoreAt gScores node
+                                let isEmpty = isNothing oldGScore
+                                let shouldUpdate = isEmpty || gScore < fromJust oldGScore
+                                return (gScore, hScore, node, isEmpty, shouldUpdate)
+                            )
+                            validNeighbors
+
+                    -- Filter to only valid updates
+                    let validUpdates = filter (\(_, _, _, _, shouldUpdate) -> shouldUpdate) neighborScores
+
+                    -- Update g-scores
+                    mapM_ (\(g, _, n, _, _) -> setGScore gScores n g) validUpdates
+
+                    -- Add neighbors to priority queue with f-score = g-score + h-score
+                    let newPQ =
+                            foldl'
+                                ( \pq (g, h, n, isEmpty, _) ->
+                                    if isEmpty
+                                        then PSQ.insert n (g + h) pq
+                                        else PSQ.update (\_ -> Just $ g + h) n pq
+                                )
+                                pqNodesRest
+                                validUpdates
+
+                    aStar' newPQ mazeBool gScores
 
 day12 :: IO ()
 day12 = do
@@ -233,12 +246,12 @@ day12 = do
         Just pathLength -> putStrLn $ "Part 1: " ++ show pathLength
     startTime <- getCPUTime
     -- Grid is too small. Because of the verhead actual time is worse with parMap compared to map
-    --let res2 = sequence . filter isJust $ parMap rdeepseq (\start -> aStar start end maze) possibleStarts
+    -- let res2 = sequence . filter isJust $ parMap rdeepseq (\start -> aStar start end maze) possibleStarts
 
-    let res2 = sequence . filter isJust $ map (\s -> aStar s end maze)  possibleStarts
+    let res2 = sequence . filter isJust $ map (\s -> aStar s end maze) possibleStarts
 
     -- Left here as example of bang patterns
-    --let res2 = sequence . filter isJust $ map (\s -> let !r = aStar s end maze in r) possibleStarts
+    -- let res2 = sequence . filter isJust $ map (\s -> let !r = aStar s end maze in r) possibleStarts
     putStrLn $ "Part 2: " ++ show (fmap minimum res2)
     endTime <- getCPUTime
 

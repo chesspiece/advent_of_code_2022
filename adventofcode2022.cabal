@@ -69,6 +69,7 @@ library
         Day12
 
     build-depends:
+        , array
         , base
         , containers
         , lens

@@ -112,7 +112,7 @@ instructionsProcessing (instruction : instrscs) next_timer accum = do
 
 day10 :: IO ()
 day10 = do
-    inputs <- fromJust . parseMaybe (many oneLineSequence <* eof) <$> readFile "./task_10.txt"
+    inputs <- fromJust . parseMaybe (many oneLineSequence <* eof) <$> readFile "./inputs/day10.txt"
     let initialStatePart2 =
             TaskState
                 { _timerCount = 0

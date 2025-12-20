@@ -31,6 +31,6 @@ checkStringV2 _ = -1
 
 day2 :: IO ()
 day2 = do
-  file_str <- readFile "task_2.txt"
+  file_str <- readFile "./inputs/day02.txt"
   print $ sum . map checkString . parseString $ file_str
   print $ sum . map checkStringV2 . parseString $ file_str

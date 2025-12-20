@@ -245,7 +245,7 @@ copyHashTable oldTable = do
 day11 :: IO ()
 day11 = do
     new_hashtable <- H.new
-    txt <- readFile "task_11.txt"
+    txt <- readFile "./inputs/day11.txt"
     tst <- runStateT (runParserT (skipMany monkeyParse <* eof) "" txt) (new_hashtable, -1, 1)
     case tst of
         (Left err, s) -> error "Error: parsing of input has failed"

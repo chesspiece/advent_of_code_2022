@@ -42,6 +42,6 @@ checkInclusion (a1, b1) = fromMaybe 0 (valueInSet b1 (fromList a1))
 
 day3 :: IO ()
 day3 = do
-    file_str <- readFile "task_3.txt"
+    file_str <- readFile "./inputs/day03.txt"
     print $ sum . map checkInclusion . parseString $ file_str
     print $ sum . map findCommon . groupThree . parseString2 $ file_str

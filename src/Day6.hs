@@ -16,6 +16,6 @@ parseInputString marker_condition = parseInputStringHelper marker_condition (-ma
 
 day6 :: IO ()
 day6 = do
-  input_stream <- readFile "./task_6.txt"
+  input_stream <- readFile "./inputs/day06.txt"
   print $ parseInputString 4 input_stream
   print $ parseInputString 14 input_stream

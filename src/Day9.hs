@@ -225,7 +225,7 @@ fullParser = fmap concat $ many oneLinemySequence
 
 day9 :: IO ()
 day9 = do
-    inputs <- fromJust <$> (parseMaybe fullParser <$> readFile "./task_9.txt")
+    inputs <- fromJust <$> (parseMaybe fullParser <$> readFile "./inputs/day09.txt")
     let initialState =
             TaskState
                 { _coord_head = (0, 0)

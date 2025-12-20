@@ -190,7 +190,7 @@ fourthRun2 i j = do
 
 day8 :: IO ()
 day8 = do
-    input_stream <- S.readFile "./task_8.txt" >>= return . V.fromList . map (V.fromList . map digitToInt) . lines
+    input_stream <- S.readFile "./inputs/day08.txt" >>= return . V.fromList . map (V.fromList . map digitToInt) . lines
     let s1 = length input_stream
     let s2 = length $ input_stream V.! 0
     let initial_sol = V.replicate s1 $ V.replicate s2 (-1)

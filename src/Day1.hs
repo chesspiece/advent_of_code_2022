@@ -12,6 +12,6 @@ computeAnsw takeList quant = take quant . reverse . sort . map sum $ takeList
 day1 :: IO ()
 day1 = do
   -- print "yay"
-  file_str <- readFile "task_1.txt"
+  file_str <- readFile "./inputs/day01.txt"
   print $ head . computeAnsw (parseString file_str) $ 1
   print $ sum . computeAnsw (parseString file_str) $ 3

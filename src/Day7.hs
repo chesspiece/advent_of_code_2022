@@ -50,7 +50,7 @@ parseInput (x : xs) Nothing
 
 day7 :: IO ()
 day7 = do
-  input_stream <- readFile "./task_7.txt" >>= return . lines
+  input_stream <- readFile "./inputs/day07.txt" >>= return . lines
   let (_, test) = parseInput input_stream Nothing
   let res_sizes = tree2list . compSize $ test
   let needed_size = 30000000 - (70000000 - head res_sizes)

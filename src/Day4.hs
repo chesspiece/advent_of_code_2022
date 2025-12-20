@@ -22,7 +22,7 @@ check2 (a, b, c, d)
 
 day4 :: IO ()
 day4 = do
-  file_str <- readFile "task_4.txt"
+  file_str <- readFile "./inputs/day04.txt"
   print $
     sum
       (maybe [] (map check1) (mapM makeTuple . parseString $ file_str))

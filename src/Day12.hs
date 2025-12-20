@@ -223,7 +223,7 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) =
 
 day12 :: IO ()
 day12 = do
-    txt <- readFile "task_12.txt"
+    txt <- readFile "./inputs/day12.txt"
     (indexes, maze) <- return . parse $ txt
     indexes <- return . fromJust $ indexes
     let (start, possibleStarts, end) = indexes

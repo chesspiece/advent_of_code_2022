@@ -266,7 +266,7 @@ bfs startNode endNode maze@(Maze _ maxRows maxColumns) = runST $ do
         newArray ((0, 0), (maxRows - 1, maxColumns - 1)) False :: ST s (STUArray s (Int, Int) Bool)
     gScores <-
         newArray ((0, 0), (maxRows - 1, maxColumns - 1)) Nothing :: ST s (STArray s (Int, Int) (Maybe Int))
-
+    setVisited mazeBool startNode
     setGScore gScores startNode 0
 
     bfs' [] (DS.empty DS.|> startNode) mazeBool gScores
@@ -286,12 +286,11 @@ bfs startNode endNode maze@(Maze _ maxRows maxColumns) = runST $ do
         | DS.null pqNodes = return $ Just resDist
         | otherwise = do
             let (pqNodesRest, currNode) = popQueue pqNodes
-            setVisited mazeBool currNode
 
             currGMaybe <- gScoreAt gScores currNode
             let currG = fromJust currGMaybe
 
-            resDist <- if currNode `elem` endNode then return $ currG : resDist else return $ resDist
+            resDist <- if currNode `elem` endNode then return $ currG : resDist else return resDist -- in AOC endNode list is too small for O(N) to be important
             validNeighbors <- neighborsClimbOKReversed maze mazeBool currNode
 
             neighborScores <-

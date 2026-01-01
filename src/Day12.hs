@@ -17,10 +17,12 @@ import Data.List (findIndex, findIndices, foldl')
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromJust, fromMaybe, isJust, isNothing)
 import qualified Data.PSQueue as PSQ
+import qualified Data.Sequence as DS
 import qualified Data.Vector as V
 
 -- import Control.Parallel.Strategies (parMap, rdeepseq)
 
+import Control.Exception.Lens (exception)
 import Control.Monad.ST (ST, runST)
 import Data.Array.MArray (MArray)
 import Data.Array.ST (STArray, STUArray, newArray, readArray, writeArray)
@@ -128,7 +130,7 @@ neighbours (MazeCoord row col) (Maze maze maxRows maxColumns) =
                 then Just $ MazeCoord (row - 1) col
                 else Nothing
     in
-        fromJust . sequence $ filter isJust [a, b, c, d]
+        fromJust . sequence $ Prelude.filter isJust [a, b, c, d]
 
 neighborsClimbOK :: Maze -> STUArray s (Int, Int) Bool -> MazeCoord -> ST s [MazeCoord]
 neighborsClimbOK maze mazeBool coord =
@@ -136,6 +138,15 @@ neighborsClimbOK maze mazeBool coord =
         ( \v -> do
             isVisited <- visitedCheck mazeBool v
             return $ (elevationAt maze v <= elevationAt maze coord + 1) && not isVisited
+        )
+        $ neighbours coord maze
+
+neighborsClimbOKReversed :: Maze -> STUArray s (Int, Int) Bool -> MazeCoord -> ST s [MazeCoord]
+neighborsClimbOKReversed maze mazeBool coord =
+    filterM
+        ( \v -> do
+            isVisited <- visitedCheck mazeBool v
+            return $ (elevationAt maze coord <= elevationAt maze v + 1) && not isVisited
         )
         $ neighbours coord maze
 
@@ -234,6 +245,76 @@ aStar startNode endNode maze@(Maze _ maxRows maxColumns) = runST $ do
 
                     aStar' newPQ mazeBool gScores
 
+type QueueMaze = DS.Seq MazeCoord
+
+popQueue :: QueueMaze -> (QueueMaze, MazeCoord)
+popQueue queue = case DS.viewl queue of
+    DS.EmptyL -> error "Should not happen herer" -- should not happend in aoc task
+    coord DS.:< rest -> (rest, coord)
+
+bfs ::
+    -- start node
+    MazeCoord ->
+    -- end node
+    [MazeCoord] ->
+    -- Maze
+    Maze ->
+    -- return path length
+    Maybe [Int]
+bfs startNode endNode maze@(Maze _ maxRows maxColumns) = runST $ do
+    mazeBool <-
+        newArray ((0, 0), (maxRows - 1, maxColumns - 1)) False :: ST s (STUArray s (Int, Int) Bool)
+    gScores <-
+        newArray ((0, 0), (maxRows - 1, maxColumns - 1)) Nothing :: ST s (STArray s (Int, Int) (Maybe Int))
+
+    setGScore gScores startNode 0
+
+    bfs' [] (DS.empty DS.|> startNode) mazeBool gScores
+  where
+    bfs' ::
+        -- resulted distances
+        [Int] ->
+        -- queue
+        QueueMaze ->
+        -- visited nodes bool array
+        STUArray s (Int, Int) Bool ->
+        -- g-scores
+        STArray s (Int, Int) (Maybe Int) ->
+        -- return path lengths
+        ST s (Maybe [Int])
+    bfs' resDist pqNodes mazeBool gScores
+        | DS.null pqNodes = return $ Just resDist
+        | otherwise = do
+            let (pqNodesRest, currNode) = popQueue pqNodes
+            setVisited mazeBool currNode
+
+            currGMaybe <- gScoreAt gScores currNode
+            let currG = fromJust currGMaybe
+
+            resDist <- if currNode `elem` endNode then return $ currG : resDist else return $ resDist
+            validNeighbors <- neighborsClimbOKReversed maze mazeBool currNode
+
+            neighborScores <-
+                mapM
+                    ( \node -> do
+                        let gScore = currG + 1
+                        return (gScore, node)
+                    )
+                    validNeighbors
+
+            mapM_ (\(g, n) -> setGScore gScores n g) neighborScores
+            mapM_ (\(g, n) -> setVisited mazeBool n) neighborScores
+
+            -- Add neighbors to queue
+            let newPQ =
+                    foldl'
+                        ( \pq (g, n) ->
+                            pq DS.|> n
+                        )
+                        pqNodesRest
+                        neighborScores
+            bfs' resDist newPQ mazeBool gScores
+
 day12 :: IO ()
 day12 = do
     txt <- readFile "./inputs/day12.txt"
@@ -241,18 +322,34 @@ day12 = do
     indexes <- return . fromJust $ indexes
     let (start, possibleStarts, end) = indexes
 
-    case aStar start end maze of
+    startTime <- getCPUTime
+    let res = aStar start end maze
+    case res of
         Nothing -> putStrLn "No path found"
         Just pathLength -> putStrLn $ "Part 1: " ++ show pathLength
+    endTime <- getCPUTime
+    putStrLn $ "Evaluation time of part 1 A*: " ++ show (fromIntegral (endTime - startTime) / 1e12)
+
     startTime <- getCPUTime
+    let res = bfs end [start] maze
+    case res of
+        Nothing -> putStrLn "BFS;No path found"
+        Just pathLength -> putStrLn $ "BFS;Part 1: " ++ show pathLength
+    endTime <- getCPUTime
+    putStrLn $ "Evaluation time of part 1 BFS: " ++ show (fromIntegral (endTime - startTime) / 1e12)
+
     -- Grid is too small. Because of the verhead actual time is worse with parMap compared to map
     -- let res2 = sequence . filter isJust $ parMap rdeepseq (\start -> aStar start end maze) possibleStarts
-
+    startTime <- getCPUTime
     let res2 = sequence . filter isJust $ map (\s -> aStar s end maze) possibleStarts
-
     -- Left here as example of bang patterns
     -- let res2 = sequence . filter isJust $ map (\s -> let !r = aStar s end maze in r) possibleStarts
     putStrLn $ "Part 2: " ++ show (fmap minimum res2)
     endTime <- getCPUTime
-
     putStrLn $ "Evaluation time of part 2 A*: " ++ show (fromIntegral (endTime - startTime) / 1e12)
+
+    startTime <- getCPUTime
+    let res2bfs = bfs end possibleStarts maze
+    putStrLn $ "BFS;Part 2: " ++ show (fmap minimum res2bfs)
+    endTime <- getCPUTime
+    putStrLn $ "Evaluation time of part 2 BFS: " ++ show (fromIntegral (endTime - startTime) / 1e12)

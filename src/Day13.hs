@@ -1,0 +1,73 @@
+{-# HLINT ignore "Use <&>" #-}
+{-# HLINT ignore "Use gets" #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant if" #-}
+{-# HLINT ignore "Move guards forward" #-}
+
+module Day13 (day13) where
+
+import Control.Monad (void)
+import Data.Maybe (fromJust)
+import Data.Text (Text)
+import qualified Data.Text as T
+import Data.Void (Void)
+import Text.Megaparsec (Parsec, between, choice, empty, eof, many, parseMaybe, sepBy, try, (<|>))
+import Text.Megaparsec.Char (hspace1, newline, space1, spaceChar)
+import qualified Text.Megaparsec.Char.Lexer as L
+
+data Packet = PNum Int | PList [Packet]
+    deriving (Show, Eq)
+
+type Parser = Parsec Void Text
+
+sc :: Parser ()
+sc =
+    L.space
+        space1
+        empty
+        empty
+
+-- consumes trailing whitespace and \n and maybe others (nee to look at space1)
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
+
+--  consumes trailing whitespace and \n and maybe others (nee to look at space1)
+symbol :: Text -> Parser Text
+symbol = L.symbol sc
+
+integer :: Parser Int
+integer = lexeme L.decimal
+
+comma :: Parser Text
+comma = symbol ","
+
+brackets :: Parser a -> Parser a
+brackets = between (symbol "[") (symbol "]")
+
+pPacket :: Parser Packet
+pPacket = (PNum <$> try integer) <|> pList
+
+pList :: Parser Packet
+pList = brackets $ do
+    elements <- sepBy pPacket comma
+    return $ PList elements
+
+outerMessage :: Parser (Packet, Packet)
+outerMessage = do
+    msg1 <- pPacket
+    msg2 <- pPacket
+    return (msg1, msg2)
+
+day13 :: IO ()
+day13 = do
+    let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
+    print tst1
+    print tst2
+    let tst =
+            fromJust $
+                parseMaybe (many outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
+    print tst

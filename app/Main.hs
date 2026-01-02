@@ -2,6 +2,7 @@ import Day1 (day1)
 import Day10 (day10)
 import Day11 (day11)
 import Day12 (day12)
+import Day13 (day13)
 import Day2 (day2)
 import Day3 (day3)
 import Day4 (day4)
@@ -25,6 +26,7 @@ chooseDay day_num = case day_num of
     10 -> day10
     11 -> day11
     12 -> day12
+    13 -> day13
     _ -> putStrLn "Day with this number is unimplemented"
 
 main :: IO ()

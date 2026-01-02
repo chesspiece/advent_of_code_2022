@@ -7,6 +7,7 @@
 
 {-# HLINT ignore "Redundant if" #-}
 {-# HLINT ignore "Move guards forward" #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Day13 (day13) where
 
@@ -21,6 +22,13 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 data Packet = PNum Int | PList [Packet]
     deriving (Show, Eq)
+
+instance Ord Packet where
+    compare :: Packet -> Packet -> Ordering
+    compare (PNum a) (PNum b) = compare a b
+    compare (PList a) (PList b) = compare a b
+    compare (PNum a) (PList b) = compare (PList [PNum a]) (PList b)
+    compare (PList a) (PNum b) = compare (PList a) (PList [PNum b])
 
 type Parser = Parsec Void Text
 

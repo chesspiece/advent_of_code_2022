@@ -15,10 +15,12 @@ import Control.Monad (void)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.IO as TIO
 import Data.Void (Void)
 import Text.Megaparsec (Parsec, between, choice, empty, eof, many, parseMaybe, sepBy, try, (<|>))
 import Text.Megaparsec.Char (hspace1, newline, space1, spaceChar)
 import qualified Text.Megaparsec.Char.Lexer as L
+import Foreign (fromBool)
 
 data Packet = PNum Int | PList [Packet]
     deriving (Show, Eq)
@@ -72,10 +74,15 @@ outerMessage = do
 
 day13 :: IO ()
 day13 = do
-    let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
-    print tst1
-    print tst2
-    let tst =
-            fromJust $
-                parseMaybe (many outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
-    print tst
+    txt <- T.unlines . filter (not . T.null) . T.lines <$> TIO.readFile "./inputs/day13.txt"
+    let my_parsed_input = fromJust $ parseMaybe (many outerMessage <* eof) txt
+    print my_parsed_input
+    --print txt
+    --let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[7,3,4]]\n"
+    --print tst1
+    --print tst2
+    --print (tst1 < tst2)
+    --let tst =
+    --        fromJust $
+    --            parseMaybe (many outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
+    --print tst

@@ -79,12 +79,22 @@ day13 = do
     let my_parsed_input_p2 =
             sort $
                 PList [PList [PNum 6]] : PList [PList [PNum 2]] : concatMap (\(x, y) -> [x, y]) my_parsed_input
-    let res = map (\(idx, (x, y)) -> if (x < y) then idx else 0) $ zip [1 ..] my_parsed_input
+    let res = zipWith (\idx (x, y) -> if x < y then idx else 0) [1 ..] my_parsed_input
     let res2 =
-            map (\(idx, x) -> if (x == PList [PList [PNum 6]]) || (x == PList [PList [PNum 2]]) then idx else 1) $
-                zip [1 ..] my_parsed_input_p2
+            zipWith
+                ( \idx x ->
+                    ( if (x == PList [PList [PNum 6]])
+                        || (x == PList [PList [PNum 2]])
+                        then
+                            idx
+                        else
+                            1
+                    )
+                )
+                [1 ..]
+                my_parsed_input_p2
     print $ sum res
-    print $ foldl' (\x y -> x * y) 1 res2
+    print $ foldl' (*) 1 res2
 
 -- let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[2]]\n[[6]]\n"
 -- print tst1

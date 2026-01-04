@@ -1,26 +1,26 @@
 {-# HLINT ignore "Use <&>" #-}
 {-# HLINT ignore "Use gets" #-}
 {-# LANGUAGE GADTs #-}
+{-# HLINT ignore "Redundant if" #-}
+{-# HLINT ignore "Move guards forward" #-}
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Redundant if" #-}
-{-# HLINT ignore "Move guards forward" #-}
-{-# LANGUAGE InstanceSigs #-}
-
 module Day13 (day13) where
 
 import Control.Monad (void)
+import Data.List (foldl', sort)
 import Data.Maybe (fromJust)
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.IO as TIO
 import Data.Void (Void)
+import Foreign (fromBool)
 import Text.Megaparsec (Parsec, between, choice, empty, eof, many, parseMaybe, sepBy, try, (<|>))
 import Text.Megaparsec.Char (hspace1, newline, space1, spaceChar)
 import qualified Text.Megaparsec.Char.Lexer as L
-import Foreign (fromBool)
 
 data Packet = PNum Int | PList [Packet]
     deriving (Show, Eq)
@@ -76,13 +76,21 @@ day13 :: IO ()
 day13 = do
     txt <- T.unlines . filter (not . T.null) . T.lines <$> TIO.readFile "./inputs/day13.txt"
     let my_parsed_input = fromJust $ parseMaybe (many outerMessage <* eof) txt
-    let res = map (\(idx, (x, y)) -> if (x < y) then idx else 0) $ zip [1..] my_parsed_input
+    let my_parsed_input_p2 =
+            sort $
+                PList [PList [PNum 6]] : PList [PList [PNum 2]] : concatMap (\(x, y) -> [x, y]) my_parsed_input
+    let res = map (\(idx, (x, y)) -> if (x < y) then idx else 0) $ zip [1 ..] my_parsed_input
+    let res2 =
+            map (\(idx, x) -> if (x == PList [PList [PNum 6]]) || (x == PList [PList [PNum 2]]) then idx else 1) $
+                zip [1 ..] my_parsed_input_p2
     print $ sum res
-    --let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[7,3,4]]\n"
-    --print tst1
-    --print tst2
-    --print (tst1 < tst2)
-    --let tst =
-    --        fromJust $
-    --            parseMaybe (many outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
-    --print tst
+    print $ foldl' (\x y -> x * y) 1 res2
+
+-- let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[2]]\n[[6]]\n"
+-- print tst1
+-- print tst2
+-- print (tst1 < tst2)
+-- let tst =
+--        fromJust $
+--            parseMaybe (many outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n[[1],[2,3,4]]\n"
+-- print tst

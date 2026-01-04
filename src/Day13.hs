@@ -76,8 +76,8 @@ day13 :: IO ()
 day13 = do
     txt <- T.unlines . filter (not . T.null) . T.lines <$> TIO.readFile "./inputs/day13.txt"
     let my_parsed_input = fromJust $ parseMaybe (many outerMessage <* eof) txt
-    print my_parsed_input
-    --print txt
+    let res = map (\(idx, (x, y)) -> if (x < y) then idx else 0) $ zip [1..] my_parsed_input
+    print $ sum res
     --let (tst1, tst2) = fromJust $ parseMaybe (outerMessage <* eof) "[[1],[2,3,4]]\n[[1],[7,3,4]]\n"
     --print tst1
     --print tst2
